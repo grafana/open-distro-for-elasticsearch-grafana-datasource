@@ -1,24 +1,72 @@
 import { DataQuery, DataSourceJsonData } from '@grafana/data';
+import {
+  BucketAggregation,
+  BucketAggregationType,
+} from './components/QueryEditor/BucketAggregationsEditor/aggregations';
+import {
+  MetricAggregation,
+  MetricAggregationType,
+} from './components/QueryEditor/MetricAggregationsEditor/aggregations';
 
-export interface MyQuery extends DataQuery {
-  queryText?: string;
-  constant: number;
+export interface ElasticsearchOptions extends DataSourceJsonData {
+  timeField: string;
+  esVersion: number;
+  interval?: string;
+  timeInterval: string;
+  maxConcurrentShardRequests?: number;
+  logMessageField?: string;
+  logLevelField?: string;
+  dataLinks?: DataLinkConfig[];
 }
 
-export const defaultQuery: Partial<MyQuery> = {
-  constant: 6.5,
+interface MetricConfiguration<T extends MetricAggregationType> {
+  label: string;
+  requiresField: boolean;
+  supportsInlineScript: boolean;
+  supportsMissing: boolean;
+  isPipelineAgg: boolean;
+  minVersion?: number;
+  maxVersion?: number;
+  supportsMultipleBucketPaths: boolean;
+  isSingleMetric?: boolean;
+  hasSettings: boolean;
+  hasMeta: boolean;
+  defaults: Omit<Extract<MetricAggregation, { type: T }>, 'id' | 'type'>;
+}
+
+type BucketConfiguration<T extends BucketAggregationType> = {
+  label: string;
+  requiresField: boolean;
+  defaultSettings: Extract<BucketAggregation, { type: T }>['settings'];
 };
 
-/**
- * These are options configured for each DataSource instance
- */
-export interface MyDataSourceOptions extends DataSourceJsonData {
-  path?: string;
+export type MetricsConfiguration = {
+  [P in MetricAggregationType]: MetricConfiguration<P>;
+};
+
+export type BucketsConfiguration = {
+  [P in BucketAggregationType]: BucketConfiguration<P>;
+};
+
+export interface ElasticsearchAggregation {
+  id: string;
+  type: MetricAggregationType | BucketAggregationType;
+  settings?: unknown;
+  field?: string;
+  hide: boolean;
 }
 
-/**
- * Value that is used in the backend, but never sent over HTTP to the frontend
- */
-export interface MySecureJsonData {
-  apiKey?: string;
+export interface ElasticsearchQuery extends DataQuery {
+  isLogsQuery?: boolean;
+  alias?: string;
+  query?: string;
+  bucketAggs?: BucketAggregation[];
+  metrics?: MetricAggregation[];
+  timeField?: string;
 }
+
+export type DataLinkConfig = {
+  field: string;
+  url: string;
+  datasourceUid?: string;
+};

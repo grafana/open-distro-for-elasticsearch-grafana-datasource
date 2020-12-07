@@ -2,8 +2,13 @@
   "type": "datasource",
   "name": "es-open-distro-datasource",
   "id": "grafana-es-open-distro-datasource",
+  "category": "logging",
+
+  "alerting": true,
+  "annotations": true,
   "metrics": true,
-  "backend": true,
+  "logs": true,
+
   "executable": "gpx_es-open-distro-datasource",
   "info": {
     "description": "",
@@ -11,10 +16,10 @@
       "name": "Grafana Labs",
       "url": "https://grafana.com"
     },
-    "keywords": [],
+    "keywords": ["elasticsearch"],
     "logos": {
-      "small": "img/logo.svg",
-      "large": "img/logo.svg"
+      "small": "img/elasticsearch.svg",
+      "large": "img/elasticsearch.svg"
     },
     "links": [
       {
@@ -29,5 +34,9 @@
   "dependencies": {
     "grafanaVersion": "7.x.x",
     "plugins": []
+  },
+
+  "queryOptions": {
+    "minInterval": true
   }
 }

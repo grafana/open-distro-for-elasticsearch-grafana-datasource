@@ -1,9 +1,13 @@
 import { DataSourcePlugin } from '@grafana/data';
-import { DataSource } from './DataSource';
-import { ConfigEditor } from './ConfigEditor';
-import { QueryEditor } from './QueryEditor';
-import { MyQuery, MyDataSourceOptions } from './types';
+import { ElasticDatasource } from './datasource';
+import { ConfigEditor } from './configuration/ConfigEditor';
+import { QueryEditor } from './components/QueryEditor';
 
-export const plugin = new DataSourcePlugin<DataSource, MyQuery, MyDataSourceOptions>(DataSource)
+class ElasticAnnotationsQueryCtrl {
+  static templateUrl = 'partials/annotations.editor.html';
+}
+
+export const plugin = new DataSourcePlugin(ElasticDatasource)
+  .setQueryEditor(QueryEditor)
   .setConfigEditor(ConfigEditor)
-  .setQueryEditor(QueryEditor);
+  .setAnnotationQueryCtrl(ElasticAnnotationsQueryCtrl);
