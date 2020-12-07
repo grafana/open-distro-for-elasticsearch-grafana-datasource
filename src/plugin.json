@@ -1,0 +1,33 @@
+{
+  "type": "datasource",
+  "name": "es-open-distro-datasource",
+  "id": "grafana-es-open-distro-datasource",
+  "metrics": true,
+  "backend": true,
+  "executable": "gpx_es-open-distro-datasource",
+  "info": {
+    "description": "",
+    "author": {
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
+    },
+    "keywords": [],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Learn more",
+        "url": "https://grafana.com/docs/features/datasources/elasticsearch/"
+      }
+    ],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaVersion": "7.x.x",
+    "plugins": []
+  }
+}
