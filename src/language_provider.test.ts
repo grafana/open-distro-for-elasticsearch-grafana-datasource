@@ -3,8 +3,10 @@ import { PromQuery } from '../prometheus/types';
 import { ElasticDatasource } from './datasource';
 import { DataSourceInstanceSettings, dateTime } from '@grafana/data';
 import { ElasticsearchOptions } from './types';
-import { TemplateSrv } from '../../../features/templating/template_srv';
-import { TimeSrv } from '../../../features/dashboard/services/TimeSrv';
+// import { TemplateSrv } from '../../../features/templating/template_srv';
+// @ts-ignore
+import { TimeSrv } from 'grafana/app/features/dashboard/services/TimeSrv';
+import { TemplateSrv } from '@grafana/runtime';
 
 const templateSrvStub = {
   getAdhocFilters: jest.fn(() => [] as any[]),

@@ -1,4 +1,4 @@
-import { reducerTester } from 'test/core/redux/reducerTester';
+import { reducerTester } from '../../../../dependencies/reducerTester';
 import { changeMetricType } from '../../MetricAggregationsEditor/state/actions';
 import { BucketAggregation, DateHistogram } from '../aggregations';
 import { bucketAggregationConfig } from '../utils';

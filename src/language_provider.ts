@@ -1,12 +1,9 @@
-import { ElasticsearchQuery } from './types';
+import { ElasticsearchQuery, PromQuery } from './types';
 import { DataQuery, LanguageProvider } from '@grafana/data';
-
 import { ElasticDatasource } from './datasource';
 
-import { PromQuery } from '../prometheus/types';
-
 import Prism, { Token } from 'prismjs';
-import grammar from '../prometheus/promql';
+import grammar from './grammar';
 
 function getNameLabelValue(promQuery: string, tokens: any): string {
   let nameLabelValue = '';

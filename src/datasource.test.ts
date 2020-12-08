@@ -14,17 +14,19 @@ import {
 } from '@grafana/data';
 import _ from 'lodash';
 import { ElasticDatasource, enhanceDataFrame } from './datasource';
-import { backendSrv } from 'app/core/services/backend_srv'; // will use the version in __mocks__
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
-import { TemplateSrv } from 'app/features/templating/template_srv';
+// import { backendSrv } from 'app/core/services/backend_srv'; // will use the version in __mocks__
+// @ts-ignore
+import { TimeSrv } from 'grafana/app/features/dashboard/services/TimeSrv';
+import { getBackendSrv, TemplateSrv } from '@grafana/runtime';
 import { ElasticsearchOptions, ElasticsearchQuery } from './types';
 import { Filters } from './components/QueryEditor/BucketAggregationsEditor/aggregations';
 
 const ELASTICSEARCH_MOCK_URL = 'http://elasticsearch.local';
+const backendSrv = getBackendSrv();
 
 jest.mock('@grafana/runtime', () => ({
   ...((jest.requireActual('@grafana/runtime') as unknown) as object),
-  getBackendSrv: () => backendSrv,
+  getBackendSrv: () => getBackendSrv(),
   getDataSourceSrv: () => {
     return {
       getInstanceSettings: () => {

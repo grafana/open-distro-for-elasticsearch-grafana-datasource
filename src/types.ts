@@ -70,3 +70,18 @@ export type DataLinkConfig = {
   url: string;
   datasourceUid?: string;
 };
+
+export interface PromQuery extends DataQuery {
+  expr: string;
+  format?: string;
+  instant?: boolean;
+  range?: boolean;
+  hinting?: boolean;
+  interval?: string;
+  intervalFactor?: number;
+  legendFormat?: string;
+  valueWithRefId?: boolean;
+  requestId?: string;
+  showingGraph?: boolean;
+  showingTable?: boolean;
+}

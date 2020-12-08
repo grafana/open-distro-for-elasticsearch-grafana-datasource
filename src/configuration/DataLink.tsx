@@ -5,7 +5,7 @@ import { Button, LegacyForms, DataLinkInput, stylesFactory } from '@grafana/ui';
 const { FormField, Switch } = LegacyForms;
 import { DataLinkConfig } from '../types';
 import { usePrevious } from 'react-use';
-import { DataSourcePicker } from '../../../../core/components/Select/DataSourcePicker';
+import { DataSourcePicker } from '../dependencies/DataSourcePicker';
 
 const getStyles = stylesFactory(() => ({
   firstRow: css`

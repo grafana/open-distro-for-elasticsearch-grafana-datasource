@@ -1,6 +1,5 @@
 import { GrafanaTheme } from '@grafana/data';
-import { IconButton, stylesFactory, useTheme } from '@grafana/ui';
-import { getInlineLabelStyles } from '@grafana/ui/src/components/Forms/InlineLabel';
+import { IconButton, InlineLabel, stylesFactory, useTheme } from '@grafana/ui';
 import { css } from 'emotion';
 import { noop } from 'lodash';
 import React, { FunctionComponent } from 'react';
@@ -24,7 +23,7 @@ export const QueryEditorRow: FunctionComponent<Props> = ({
 
   return (
     <fieldset className={styles.root}>
-      <div className={getInlineLabelStyles(theme, 17).label}>
+      <InlineLabel>
         <legend className={styles.label}>{label}</legend>
         {onHideClick && (
           <IconButton
@@ -46,7 +45,7 @@ export const QueryEditorRow: FunctionComponent<Props> = ({
           disabled={!onRemoveClick}
           aria-label="remove metric"
         />
-      </div>
+      </InlineLabel>
       {children}
     </fieldset>
   );

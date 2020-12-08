@@ -1,4 +1,4 @@
-import { reducerTester } from 'test/core/redux/reducerTester';
+import { reducerTester } from '../../dependencies/reducerTester';
 import { ElasticsearchQuery } from '../../types';
 import { aliasPatternReducer, changeAliasPattern, changeQuery, queryReducer } from './state';
 

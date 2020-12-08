@@ -1,7 +1,7 @@
 import _ from 'lodash';
-import flatten from 'app/core/utils/flatten';
+import flatten from './dependencies/flatten';
 import * as queryDef from './query_def';
-import TableModel from 'app/core/table_model';
+import TableModel from './dependencies/table_model';
 import {
   DataQueryResponse,
   DataFrame,

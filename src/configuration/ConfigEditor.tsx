@@ -5,7 +5,7 @@ import { ElasticsearchOptions } from '../types';
 import { defaultMaxConcurrentShardRequests, ElasticDetails } from './ElasticDetails';
 import { LogsConfig } from './LogsConfig';
 import { DataLinks } from './DataLinks';
-import { config } from 'app/core/config';
+import { config } from '@grafana/runtime';
 
 export type Props = DataSourcePluginOptionsEditorProps<ElasticsearchOptions>;
 export const ConfigEditor = (props: Props) => {

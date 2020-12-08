@@ -1,4 +1,4 @@
-import { reducerTester } from 'test/core/redux/reducerTester';
+import { reducerTester } from '../../../../../../reducerTester';
 import { PipelineVariable } from '../../../aggregations';
 import {
   addPipelineVariable,

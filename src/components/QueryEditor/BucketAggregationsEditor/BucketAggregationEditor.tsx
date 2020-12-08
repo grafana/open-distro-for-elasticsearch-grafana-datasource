@@ -17,6 +17,7 @@ const bucketAggOptions: Array<SelectableValue<BucketAggregationType>> = Object.e
   })
 );
 
+// @ts-ignore
 const toSelectableValue = ({ value, text }: MetricFindValue): SelectableValue<string> => ({
   label: text,
   value: `${value || text}`,
