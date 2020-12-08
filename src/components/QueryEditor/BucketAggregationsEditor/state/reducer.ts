@@ -83,6 +83,7 @@ export const reducer = (
       return state;
 
     case CHANGE_BUCKET_AGG_SETTING:
+      // @ts-ignore
       return state.map(bucketAgg => {
         if (bucketAgg.id !== action.payload.bucketAgg.id) {
           return bucketAgg;

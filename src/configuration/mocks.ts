@@ -1,6 +1,6 @@
 import { DataSourceSettings } from '@grafana/data';
 import { ElasticsearchOptions } from '../types';
-import { createDatasourceSettings } from '../../../../features/datasources/mocks';
+import { createDatasourceSettings } from '../dependencies/mocks';
 
 export function createDefaultConfigOptions(): DataSourceSettings<ElasticsearchOptions> {
   return createDatasourceSettings<ElasticsearchOptions>({

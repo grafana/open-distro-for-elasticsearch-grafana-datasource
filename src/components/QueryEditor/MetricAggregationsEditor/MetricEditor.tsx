@@ -25,6 +25,7 @@ const toOption = (metric: MetricAggregation) => ({
   value: metric.type,
 });
 
+// @ts-ignore
 const toSelectableValue = ({ value, text }: MetricFindValue): SelectableValue<string> => ({
   label: text,
   value: `${value || text}`,

@@ -81,8 +81,8 @@ export const reducer = (
           hide: !metric.hide,
         };
       });
-
     case CHANGE_METRIC_SETTING:
+      // @ts-ignore
       return state.map(metric => {
         if (metric.id !== action.payload.metric.id) {
           return metric;

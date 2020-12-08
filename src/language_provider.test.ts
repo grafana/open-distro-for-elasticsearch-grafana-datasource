@@ -1,8 +1,8 @@
 import LanguageProvider from './language_provider';
-import { PromQuery } from '../prometheus/types';
+// import { PromQuery } from '../prometheus/types';
 import { ElasticDatasource } from './datasource';
 import { DataSourceInstanceSettings, dateTime } from '@grafana/data';
-import { ElasticsearchOptions } from './types';
+import { ElasticsearchOptions, PromQuery } from './types';
 // import { TemplateSrv } from '../../../features/templating/template_srv';
 // @ts-ignore
 import { TimeSrv } from 'grafana/app/features/dashboard/services/TimeSrv';

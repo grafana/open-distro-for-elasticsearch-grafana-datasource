@@ -437,6 +437,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     const targets = this.interpolateVariablesInQueries(_.cloneDeep(options.targets), options.scopedVars);
     const sentTargets: ElasticsearchQuery[] = [];
 
+    // @ts-ignore
     // add global adhoc filters to timeFilter
     const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
 
@@ -654,11 +655,13 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   }
 
   targetContainsTemplate(target: any) {
+    // @ts-ignore
     if (this.templateSrv.variableExists(target.query) || this.templateSrv.variableExists(target.alias)) {
       return true;
     }
 
     for (const bucketAgg of target.bucketAggs) {
+      // @ts-ignore
       if (this.templateSrv.variableExists(bucketAgg.field) || this.objectContainsTemplate(bucketAgg.settings)) {
         return true;
       }
@@ -666,6 +669,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
     for (const metric of target.metrics) {
       if (
+        // @ts-ignore
         this.templateSrv.variableExists(metric.field) ||
         this.objectContainsTemplate(metric.settings) ||
         this.objectContainsTemplate(metric.meta)
@@ -695,6 +699,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
     for (const key of Object.keys(obj)) {
       if (this.isPrimitive(obj[key])) {
+        // @ts-ignore
         if (this.templateSrv.variableExists(obj[key])) {
           return true;
         }
@@ -736,6 +741,7 @@ export function enhanceDataFrame(dataFrame: DataFrame, dataLinks: DataLinkConfig
     let link: DataLink;
 
     if (dataLinkConfig.datasourceUid) {
+      // @ts-ignore
       const dsSettings = dataSourceSrv.getInstanceSettings(dataLinkConfig.datasourceUid);
 
       link = {
@@ -744,6 +750,7 @@ export function enhanceDataFrame(dataFrame: DataFrame, dataLinks: DataLinkConfig
         internal: {
           query: { query: dataLinkConfig.url },
           datasourceUid: dataLinkConfig.datasourceUid,
+          // @ts-ignore
           datasourceName: dsSettings?.name ?? 'Data source not found',
         },
       };
