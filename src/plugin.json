@@ -1,6 +1,6 @@
 {
   "type": "datasource",
-  "name": "es-open-distro-datasource",
+  "name": "OpenDistro for Elasticsearch",
   "id": "grafana-es-open-distro-datasource",
   "category": "logging",
 
@@ -17,10 +17,10 @@
       "name": "Grafana Labs",
       "url": "https://grafana.com"
     },
-    "keywords": ["elasticsearch"],
+    "keywords": ["elasticsearch", "opendistro"],
     "logos": {
-      "small": "img/elasticsearch.svg",
-      "large": "img/elasticsearch.svg"
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
     },
     "links": [
       {
