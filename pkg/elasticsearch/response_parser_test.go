@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
 	"github.com/grafana/es-open-distro-datasource/pkg/null"
 	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"

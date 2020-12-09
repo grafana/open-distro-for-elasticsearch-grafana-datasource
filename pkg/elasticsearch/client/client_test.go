@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
 	"github.com/grafana/es-open-distro-datasource/pkg/utils"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/require"
 
-	"github.com/grafana/grafana/pkg/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,8 +24,8 @@ func TestClient(t *testing.T) {
 	Convey("Test elasticsearch client", t, func() {
 		Convey("NewClient", func() {
 			Convey("When no version set should return error", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(make(map[string]interface{})),
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(make(map[string]interface{})),
 				}
 
 				_, err := NewClient(context.Background(), ds, nil)
@@ -33,8 +33,8 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("When no time field name set should return error", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(map[string]interface{}{
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 						"esVersion": 5,
 					}),
 				}
@@ -44,8 +44,8 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("When unsupported version set should return error", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(map[string]interface{}{
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 						"esVersion": 6,
 						"timeField": "@timestamp",
 					}),
@@ -56,8 +56,8 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("When version 2 should return v2 client", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(map[string]interface{}{
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 						"esVersion": 2,
 						"timeField": "@timestamp",
 					}),
@@ -69,8 +69,8 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("When version 5 should return v5 client", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(map[string]interface{}{
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 						"esVersion": 5,
 						"timeField": "@timestamp",
 					}),
@@ -82,8 +82,8 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("When version 56 should return v5.6 client", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(map[string]interface{}{
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 						"esVersion": 56,
 						"timeField": "@timestamp",
 					}),
@@ -95,8 +95,8 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("When version 60 should return v6.0 client", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(map[string]interface{}{
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 						"esVersion": 60,
 						"timeField": "@timestamp",
 					}),
@@ -108,8 +108,8 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("When version 70 should return v7.0 client", func() {
-				ds := &models.DataSource{
-					JsonData: utils.NewJsonFromAny(map[string]interface{}{
+				ds := &backend.DataSourceInstanceSettings{
+					JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 						"esVersion": 70,
 						"timeField": "@timestamp",
 					}),
@@ -121,9 +121,9 @@ func TestClient(t *testing.T) {
 			})
 		})
 
-		httpClientScenario(t, "Given a fake http client and a v2.x client with response", &models.DataSource{
+		httpClientScenario(t, "Given a fake http client and a v2.x client with response", &backend.DataSourceInstanceSettings{
 			Database: "[metrics-]YYYY.MM.DD",
-			JsonData: utils.NewJsonFromAny(map[string]interface{}{
+			JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 				"esVersion": 2,
 				"timeField": "@timestamp",
 				"interval":  "Daily",
@@ -182,9 +182,9 @@ func TestClient(t *testing.T) {
 			})
 		})
 
-		httpClientScenario(t, "Given a fake http client and a v5.x client with response", &models.DataSource{
+		httpClientScenario(t, "Given a fake http client and a v5.x client with response", &backend.DataSourceInstanceSettings{
 			Database: "[metrics-]YYYY.MM.DD",
-			JsonData: utils.NewJsonFromAny(map[string]interface{}{
+			JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 				"esVersion":                  5,
 				"maxConcurrentShardRequests": 100,
 				"timeField":                  "@timestamp",
@@ -244,9 +244,9 @@ func TestClient(t *testing.T) {
 			})
 		})
 
-		httpClientScenario(t, "Given a fake http client and a v5.6 client with response", &models.DataSource{
+		httpClientScenario(t, "Given a fake http client and a v5.6 client with response", &backend.DataSourceInstanceSettings{
 			Database: "[metrics-]YYYY.MM.DD",
-			JsonData: utils.NewJsonFromAny(map[string]interface{}{
+			JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 				"esVersion":                  56,
 				"maxConcurrentShardRequests": 100,
 				"timeField":                  "@timestamp",
@@ -306,9 +306,9 @@ func TestClient(t *testing.T) {
 			})
 		})
 
-		httpClientScenario(t, "Given a fake http client and a v7.0 client with response", &models.DataSource{
+		httpClientScenario(t, "Given a fake http client and a v7.0 client with response", &backend.DataSourceInstanceSettings{
 			Database: "[metrics-]YYYY.MM.DD",
-			JsonData: utils.NewJsonFromAny(map[string]interface{}{
+			JSONData: utils.NewRawJsonFromAny(map[string]interface{}{
 				"esVersion":                  70,
 				"maxConcurrentShardRequests": 6,
 				"timeField":                  "@timestamp",
@@ -393,7 +393,7 @@ type scenarioContext struct {
 
 type scenarioFunc func(*scenarioContext)
 
-func httpClientScenario(t *testing.T, desc string, ds *models.DataSource, fn scenarioFunc) {
+func httpClientScenario(t *testing.T, desc string, ds *backend.DataSourceInstanceSettings, fn scenarioFunc) {
 	t.Helper()
 
 	Convey(desc, func() {
@@ -413,7 +413,7 @@ func httpClientScenario(t *testing.T, desc string, ds *models.DataSource, fn sce
 			require.Nil(t, err)
 			rw.WriteHeader(sc.responseStatus)
 		}))
-		ds.Url = ts.URL
+		ds.URL = ts.URL
 
 		from := time.Date(2018, 5, 15, 17, 50, 0, 0, time.UTC)
 		to := time.Date(2018, 5, 15, 17, 55, 0, 0, time.UTC)
@@ -428,7 +428,7 @@ func httpClientScenario(t *testing.T, desc string, ds *models.DataSource, fn sce
 
 		currentNewDatasourceHttpClient := newDatasourceHttpClient
 
-		newDatasourceHttpClient = func(ds *models.DataSource) (*http.Client, error) {
+		newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
 			return ts.Client(), nil
 		}
 
