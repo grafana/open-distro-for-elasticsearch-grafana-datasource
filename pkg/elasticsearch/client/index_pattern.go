@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/grafana/pkg/tsdb"
+	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
 )
 
 const (

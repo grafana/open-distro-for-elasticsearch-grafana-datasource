@@ -14,13 +14,20 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+type ElasticsearchDatasource struct {
+	// The instance manager can help with lifecycle management
+	// of datasource instances in plugins. It's not a requirements
+	// but a best practice that we recommend that you follow.
+	im instancemgmt.InstanceManager
+}
+
 // newDatasource returns datasource.ServeOpts.
 func newDatasource() datasource.ServeOpts {
 	// creates a instance manager for your plugin. The function passed
 	// into `NewInstanceManger` is called when the instance is created
 	// for the first time or when a datasource configuration changed.
 	im := datasource.NewInstanceManager(newDataSourceInstance)
-	ds := &SampleDatasource{
+	ds := &ElasticsearchDatasource{
 		im: im,
 	}
 
@@ -30,20 +37,17 @@ func newDatasource() datasource.ServeOpts {
 	}
 }
 
-// SampleDatasource is an example datasource used to scaffold
-// new datasource plugins with an backend.
-type SampleDatasource struct {
-	// The instance manager can help with lifecycle management
-	// of datasource instances in plugins. It's not a requirements
-	// but a best practice that we recommend that you follow.
-	im instancemgmt.InstanceManager
+func newDataSourceInstance(setting backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	return &instanceSettings{
+		httpClient: &http.Client{},
+	}, nil
 }
 
 // QueryData handles multiple queries and returns multiple responses.
 // req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
 // The QueryDataResponse contains a map of RefID to the response for each query, and each response
 // contains Frames ([]*Frame).
-func (td *SampleDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (td *ElasticsearchDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	log.DefaultLogger.Info("QueryData", "request", req)
 
 	// create response struct
@@ -65,7 +69,7 @@ type queryModel struct {
 	Format string `json:"format"`
 }
 
-func (td *SampleDatasource) query(ctx context.Context, query backend.DataQuery) backend.DataResponse {
+func (td *ElasticsearchDatasource) query(ctx context.Context, query backend.DataQuery) backend.DataResponse {
 	// Unmarshal the json into our queryModel
 	var qm queryModel
 
@@ -104,7 +108,7 @@ func (td *SampleDatasource) query(ctx context.Context, query backend.DataQuery) 
 // The main use case for these health checks is the test button on the
 // datasource configuration page which allows users to verify that
 // a datasource is working as expected.
-func (td *SampleDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (td *ElasticsearchDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	var status = backend.HealthStatusOk
 	var message = "Data source is working"
 
@@ -121,12 +125,6 @@ func (td *SampleDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 
 type instanceSettings struct {
 	httpClient *http.Client
-}
-
-func newDataSourceInstance(setting backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	return &instanceSettings{
-		httpClient: &http.Client{},
-	}, nil
 }
 
 func (s *instanceSettings) Dispose() {

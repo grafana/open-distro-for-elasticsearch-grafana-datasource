@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/grafana/grafana/pkg/components/simplejson"
+	simplejson "github.com/bitly/go-simplejson"
 
-	"github.com/grafana/grafana/pkg/tsdb"
+	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
 )
 
 type response struct {

@@ -7,10 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grafana/grafana/pkg/components/null"
-	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/tsdb"
-	es "github.com/grafana/grafana/pkg/tsdb/elasticsearch/client"
+	simplejson "github.com/bitly/go-simplejson"
+	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
+	"github.com/grafana/es-open-distro-datasource/pkg/null"
+	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
+	"github.com/grafana/es-open-distro-datasource/pkg/utils"
 )
 
 const (
@@ -53,7 +54,7 @@ func (rp *responseParser) getTimeSeries() (*tsdb.Response, error) {
 
 		var debugInfo *simplejson.Json
 		if rp.DebugInfo != nil && i == 0 {
-			debugInfo = simplejson.NewFromAny(rp.DebugInfo)
+			debugInfo = utils.NewJsonFromAny(rp.DebugInfo)
 		}
 
 		if res.Error != nil {
@@ -97,7 +98,7 @@ func (rp *responseParser) processBuckets(aggs map[string]interface{}, target *Qu
 	for _, aggID := range aggIDs {
 		v := aggs[aggID]
 		aggDef, _ := findAgg(target, aggID)
-		esAgg := simplejson.NewFromAny(v)
+		esAgg := utils.NewJsonFromAny(v)
 		if aggDef == nil {
 			continue
 		}
@@ -113,7 +114,7 @@ func (rp *responseParser) processBuckets(aggs map[string]interface{}, target *Qu
 			}
 		} else {
 			for _, b := range esAgg.Get("buckets").MustArray() {
-				bucket := simplejson.NewFromAny(b)
+				bucket := utils.NewJsonFromAny(b)
 				newProps := make(map[string]string)
 
 				for k, v := range props {
@@ -143,7 +144,7 @@ func (rp *responseParser) processBuckets(aggs map[string]interface{}, target *Qu
 			sort.Strings(bucketKeys)
 
 			for _, bucketKey := range bucketKeys {
-				bucket := simplejson.NewFromAny(buckets[bucketKey])
+				bucket := utils.NewJsonFromAny(buckets[bucketKey])
 				newProps := make(map[string]string)
 
 				for k, v := range props {
@@ -175,7 +176,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 			}
 
 			for _, v := range esAgg.Get("buckets").MustArray() {
-				bucket := simplejson.NewFromAny(v)
+				bucket := utils.NewJsonFromAny(v)
 				value := castToNullFloat(bucket.Get("doc_count"))
 				key := castToNullFloat(bucket.Get("key"))
 				newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
@@ -193,7 +194,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 				break
 			}
 
-			firstBucket := simplejson.NewFromAny(buckets[0])
+			firstBucket := utils.NewJsonFromAny(buckets[0])
 			percentiles := firstBucket.GetPath(metric.ID, "values").MustMap()
 
 			percentileKeys := make([]string, 0)
@@ -211,7 +212,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 				newSeries.Tags["metric"] = "p" + percentileName
 				newSeries.Tags["field"] = metric.Field
 				for _, v := range buckets {
-					bucket := simplejson.NewFromAny(v)
+					bucket := utils.NewJsonFromAny(v)
 					value := castToNullFloat(bucket.GetPath(metric.ID, "values", percentileName))
 					key := castToNullFloat(bucket.Get("key"))
 					newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
@@ -243,7 +244,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 				newSeries.Tags["field"] = metric.Field
 
 				for _, v := range buckets {
-					bucket := simplejson.NewFromAny(v)
+					bucket := utils.NewJsonFromAny(v)
 					key := castToNullFloat(bucket.Get("key"))
 					var value null.Float
 					switch statName {
@@ -270,7 +271,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 			newSeries.Tags["field"] = metric.Field
 			newSeries.Tags["metricId"] = metric.ID
 			for _, v := range esAgg.Get("buckets").MustArray() {
-				bucket := simplejson.NewFromAny(v)
+				bucket := utils.NewJsonFromAny(v)
 				key := castToNullFloat(bucket.Get("key"))
 				valueObj, err := bucket.Get(metric.ID).Map()
 				if err != nil {
@@ -319,7 +320,7 @@ func (rp *responseParser) processAggregationDocs(esAgg *simplejson.Json, aggDef 
 	}
 
 	for _, v := range esAgg.Get("buckets").MustArray() {
-		bucket := simplejson.NewFromAny(v)
+		bucket := utils.NewJsonFromAny(v)
 		values := make(tsdb.RowValues, 0)
 
 		for _, propKey := range propKeys {
@@ -566,7 +567,7 @@ func findAgg(target *Query, aggID string) (*BucketAgg, error) {
 
 func getErrorFromElasticResponse(response *es.SearchResponse) *tsdb.QueryResult {
 	result := tsdb.NewQueryResult()
-	json := simplejson.NewFromAny(response.Error)
+	json := utils.NewJsonFromAny(response.Error)
 	reason := json.Get("reason").MustString()
 	rootCauseReason := json.Get("root_cause").GetIndex(0).Get("reason").MustString()
 

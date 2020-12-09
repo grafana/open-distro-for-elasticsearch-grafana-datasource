@@ -3,9 +3,11 @@ package es
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -13,22 +15,41 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/tsdb"
+	simplejson "github.com/bitly/go-simplejson"
+	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 
-	"github.com/grafana/grafana/pkg/models"
 	"golang.org/x/net/context/ctxhttp"
 )
 
 const loggerName = "tsdb.elasticsearch.client"
 
 var (
-	clientLog = log.New(loggerName)
+	clientLog = log.New()
 )
 
-var newDatasourceHttpClient = func(ds *models.DataSource) (*http.Client, error) {
-	return ds.GetHttpClient()
+// TODO: use real settings for HTTP client
+var newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Renegotiation: tls.RenegotiateFreelyAsClient,
+		},
+		Proxy: http.ProxyFromEnvironment,
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+	}
+
+	return &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: transport,
+	}, nil
 }
 
 // Client represents a client which can interact with elasticsearch api
@@ -42,18 +63,24 @@ type Client interface {
 }
 
 // NewClient creates a new elasticsearch client
-var NewClient = func(ctx context.Context, ds *models.DataSource, timeRange *tsdb.TimeRange) (Client, error) {
-	version, err := ds.JsonData.Get("esVersion").Int()
+var NewClient = func(ctx context.Context, ds *backend.DataSourceInstanceSettings, timeRange *tsdb.TimeRange) (Client, error) {
+	jsonDataStr := ds.JSONData
+	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
+	if err != nil {
+		return nil, err
+	}
+
+	version, err := jsonData.Get("esVersion").Int()
 	if err != nil {
 		return nil, fmt.Errorf("elasticsearch version is required, err=%v", err)
 	}
 
-	timeField, err := ds.JsonData.Get("timeField").String()
+	timeField, err := jsonData.Get("timeField").String()
 	if err != nil {
 		return nil, fmt.Errorf("elasticsearch time field name is required, err=%v", err)
 	}
 
-	indexInterval := ds.JsonData.Get("interval").MustString()
+	indexInterval := jsonData.Get("interval").MustString()
 	ip, err := newIndexPattern(indexInterval, ds.Database)
 	if err != nil {
 		return nil, err
@@ -83,7 +110,7 @@ var NewClient = func(ctx context.Context, ds *models.DataSource, timeRange *tsdb
 
 type baseClientImpl struct {
 	ctx          context.Context
-	ds           *models.DataSource
+	ds           *backend.DataSourceInstanceSettings
 	version      int
 	timeField    string
 	indices      []string
@@ -100,13 +127,14 @@ func (c *baseClientImpl) GetTimeField() string {
 }
 
 func (c *baseClientImpl) GetMinInterval(queryInterval string) (time.Duration, error) {
-	return tsdb.GetIntervalFrom(c.ds, simplejson.NewFromAny(map[string]interface{}{
-		"interval": queryInterval,
-	}), 5*time.Second)
+	intervalJSON := simplejson.New()
+	intervalJSON.Set("interval", queryInterval)
+	return tsdb.GetIntervalFrom(c.ds, intervalJSON, 5*time.Second)
 }
 
 func (c *baseClientImpl) getSettings() *simplejson.Json {
-	return c.ds.JsonData
+	settings, _ := simplejson.NewJson(c.ds.JSONData)
+	return settings
 }
 
 type multiRequest struct {
@@ -154,7 +182,7 @@ func (c *baseClientImpl) encodeBatchRequests(requests []*multiRequest) ([]byte, 
 }
 
 func (c *baseClientImpl) executeRequest(method, uriPath, uriQuery string, body []byte) (*response, error) {
-	u, err := url.Parse(c.ds.Url)
+	u, err := url.Parse(c.ds.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -185,14 +213,18 @@ func (c *baseClientImpl) executeRequest(method, uriPath, uriQuery string, body [
 	req.Header.Set("User-Agent", "Grafana")
 	req.Header.Set("Content-Type", "application/json")
 
-	if c.ds.BasicAuth {
+	secureJsonData := c.ds.DecryptedSecureJSONData
+
+	if c.ds.BasicAuthEnabled {
 		clientLog.Debug("Request configured to use basic authentication")
-		req.SetBasicAuth(c.ds.BasicAuthUser, c.ds.DecryptedBasicAuthPassword())
+		basicAuthPassword := secureJsonData["basicAuthPassword"]
+		req.SetBasicAuth(c.ds.BasicAuthUser, basicAuthPassword)
 	}
 
-	if !c.ds.BasicAuth && c.ds.User != "" {
+	if !c.ds.BasicAuthEnabled && c.ds.User != "" {
 		clientLog.Debug("Request configured to use basic authentication")
-		req.SetBasicAuth(c.ds.User, c.ds.DecryptedPassword())
+		password := secureJsonData["password"]
+		req.SetBasicAuth(c.ds.User, password)
 	}
 
 	httpClient, err := newDatasourceHttpClient(c.ds)

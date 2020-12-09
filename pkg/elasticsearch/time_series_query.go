@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/tsdb"
-	es "github.com/grafana/grafana/pkg/tsdb/elasticsearch/client"
+	"github.com/bitly/go-simplejson"
+	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
+	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
+	"github.com/grafana/es-open-distro-datasource/pkg/utils"
 )
 
 type timeSeriesQuery struct {
@@ -261,7 +262,7 @@ func addTermsAgg(aggBuilder es.AggBuilder, bucketAgg *BucketAgg, metrics []*Metr
 func addFiltersAgg(aggBuilder es.AggBuilder, bucketAgg *BucketAgg) es.AggBuilder {
 	filters := make(map[string]interface{})
 	for _, filter := range bucketAgg.Settings.Get("filters").MustArray() {
-		json := simplejson.NewFromAny(filter)
+		json := utils.NewJsonFromAny(filter)
 		query := json.Get("query").MustString()
 		label := json.Get("label").MustString()
 		if label == "" {
@@ -333,7 +334,7 @@ func (p *timeSeriesQueryParser) parseBucketAggs(model *simplejson.Json) ([]*Buck
 	var err error
 	var result []*BucketAgg
 	for _, t := range model.Get("bucketAggs").MustArray() {
-		aggJSON := simplejson.NewFromAny(t)
+		aggJSON := utils.NewJsonFromAny(t)
 		agg := &BucketAgg{}
 
 		agg.Type, err = aggJSON.Get("type").String()
@@ -347,7 +348,7 @@ func (p *timeSeriesQueryParser) parseBucketAggs(model *simplejson.Json) ([]*Buck
 		}
 
 		agg.Field = aggJSON.Get("field").MustString()
-		agg.Settings = simplejson.NewFromAny(aggJSON.Get("settings").MustMap())
+		agg.Settings = utils.NewJsonFromAny(aggJSON.Get("settings").MustMap())
 
 		result = append(result, agg)
 	}
@@ -358,15 +359,15 @@ func (p *timeSeriesQueryParser) parseMetrics(model *simplejson.Json) ([]*MetricA
 	var err error
 	var result []*MetricAgg
 	for _, t := range model.Get("metrics").MustArray() {
-		metricJSON := simplejson.NewFromAny(t)
+		metricJSON := utils.NewJsonFromAny(t)
 		metric := &MetricAgg{}
 
 		metric.Field = metricJSON.Get("field").MustString()
 		metric.Hide = metricJSON.Get("hide").MustBool(false)
 		metric.ID = metricJSON.Get("id").MustString()
 		metric.PipelineAggregate = metricJSON.Get("pipelineAgg").MustString()
-		metric.Settings = simplejson.NewFromAny(metricJSON.Get("settings").MustMap())
-		metric.Meta = simplejson.NewFromAny(metricJSON.Get("meta").MustMap())
+		metric.Settings = utils.NewJsonFromAny(metricJSON.Get("settings").MustMap())
+		metric.Meta = utils.NewJsonFromAny(metricJSON.Get("meta").MustMap())
 		metric.Type, err = metricJSON.Get("type").String()
 		if err != nil {
 			return nil, err
