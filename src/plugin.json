@@ -8,6 +8,7 @@
   "annotations": true,
   "metrics": true,
   "logs": true,
+  "backend": true,
 
   "executable": "gpx_es-open-distro-datasource",
   "info": {

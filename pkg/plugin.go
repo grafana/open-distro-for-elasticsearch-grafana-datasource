@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/grafana/es-open-distro-datasource/pkg/elasticsearch"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
@@ -26,10 +27,8 @@ func newDatasource() datasource.ServeOpts {
 	// creates a instance manager for your plugin. The function passed
 	// into `NewInstanceManger` is called when the instance is created
 	// for the first time or when a datasource configuration changed.
-	im := datasource.NewInstanceManager(newDataSourceInstance)
-	ds := &ElasticsearchDatasource{
-		im: im,
-	}
+	// im := datasource.NewInstanceManager(newDataSourceInstance)
+	ds := elasticsearch.NewElasticsearchDatasource()
 
 	return datasource.ServeOpts{
 		QueryDataHandler:   ds,
