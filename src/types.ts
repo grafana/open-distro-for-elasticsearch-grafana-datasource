@@ -9,6 +9,7 @@ import {
 } from './components/QueryEditor/MetricAggregationsEditor/aggregations';
 
 export interface ElasticsearchOptions extends DataSourceJsonData {
+  database: string;
   timeField: string;
   esVersion: number;
   interval?: string;

@@ -39,8 +39,8 @@ export const ElasticDetails = (props: Props) => {
               labelWidth={10}
               inputWidth={15}
               label="Index name"
-              value={value.database || ''}
-              onChange={changeHandler('database', value, onChange)}
+              value={value.jsonData.database || ''}
+              onChange={jsonDataChangeHandler('database', value, onChange)}
               placeholder={'es-index-name'}
               required
             />
@@ -145,17 +145,6 @@ export const ElasticDetails = (props: Props) => {
       </div>
     </>
   );
-};
-
-const changeHandler = (
-  key: keyof DataSourceSettings<ElasticsearchOptions>,
-  value: Props['value'],
-  onChange: Props['onChange']
-) => (event: React.SyntheticEvent<HTMLInputElement | HTMLSelectElement>) => {
-  onChange({
-    ...value,
-    [key]: event.currentTarget.value,
-  });
 };
 
 const jsonDataChangeHandler = (key: keyof ElasticsearchOptions, value: Props['value'], onChange: Props['onChange']) => (

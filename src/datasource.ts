@@ -70,8 +70,8 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     this.withCredentials = instanceSettings.withCredentials;
     this.url = instanceSettings.url!;
     this.name = instanceSettings.name;
-    this.index = instanceSettings.database ?? '';
     const settingsData = instanceSettings.jsonData || ({} as ElasticsearchOptions);
+    this.index = settingsData.database ?? '';
 
     this.timeField = settingsData.timeField;
     this.esVersion = settingsData.esVersion;
