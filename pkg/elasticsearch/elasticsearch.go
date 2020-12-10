@@ -86,7 +86,8 @@ func (ds *ElasticsearchDatasource) QueryData(ctx context.Context, req *backend.Q
 	// }
 
 	query := newTimeSeriesQuery(client, req, intervalCalculator)
-	return query.execute()
+	response, err := query.execute()
+	return response, err
 }
 
 // getDSInstance Returns cached datasource or creates new one

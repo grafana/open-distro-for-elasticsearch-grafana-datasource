@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"errors"
+	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -189,17 +190,17 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 			// }
 			buckets := esAgg.Get("buckets").MustArray()
 			newFrame := data.NewFrame(target.Alias,
-				data.NewField("time", nil, make([]time.Time, len(buckets))),
-				data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+				data.NewFieldFromFieldType(data.FieldTypeNullableTime, len(buckets)),
+				data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, len(buckets)),
 			)
 			valueField := newFrame.Fields[1]
+			valueField.Labels = data.Labels{}
 
 			for i, v := range buckets {
 				bucket := utils.NewJsonFromAny(v)
 				value := castToNullFloat(bucket.Get("doc_count"))
 				key := castToNullFloat(bucket.Get("key"))
-				newFrame.Set(0, i, key)
-				newFrame.Set(1, i, value)
+				setFrameRow(newFrame, i, key, value)
 				// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 			}
 
@@ -225,10 +226,11 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 			sort.Strings(percentileKeys)
 			for _, percentileName := range percentileKeys {
 				newFrame := data.NewFrame(target.Alias,
-					data.NewField("time", nil, make([]time.Time, len(buckets))),
-					data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+					data.NewFieldFromFieldType(data.FieldTypeNullableTime, len(buckets)),
+					data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, len(buckets)),
 				)
 				valueField := newFrame.Fields[1]
+				valueField.Labels = data.Labels{}
 
 				for k, v := range props {
 					valueField.Labels[k] = v
@@ -240,8 +242,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 					bucket := utils.NewJsonFromAny(v)
 					value := castToNullFloat(bucket.GetPath(metric.ID, "values", percentileName))
 					key := castToNullFloat(bucket.Get("key"))
-					newFrame.Set(0, i, key)
-					newFrame.Set(1, i, value)
+					setFrameRow(newFrame, i, key, value)
 					// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 				}
 				*frames = append(*frames, newFrame)
@@ -262,10 +263,11 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 				}
 
 				newFrame := data.NewFrame(target.Alias,
-					data.NewField("time", nil, make([]time.Time, len(buckets))),
-					data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+					data.NewFieldFromFieldType(data.FieldTypeNullableTime, len(buckets)),
+					data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, len(buckets)),
 				)
 				valueField := newFrame.Fields[1]
+				valueField.Labels = data.Labels{}
 
 				for k, v := range props {
 					valueField.Labels[k] = v
@@ -285,8 +287,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 					default:
 						value = castToNullFloat(bucket.GetPath(metric.ID, statName))
 					}
-					newFrame.Set(0, i, key)
-					newFrame.Set(1, i, value)
+					setFrameRow(newFrame, i, key, value)
 					// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 				}
 				*frames = append(*frames, newFrame)
@@ -295,10 +296,11 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 			buckets := esAgg.Get("buckets").MustArray()
 
 			newFrame := data.NewFrame(target.Alias,
-				data.NewField("time", nil, make([]time.Time, len(buckets))),
-				data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+				data.NewFieldFromFieldType(data.FieldTypeNullableTime, len(buckets)),
+				data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, len(buckets)),
 			)
 			valueField := newFrame.Fields[1]
+			valueField.Labels = data.Labels{}
 
 			for k, v := range props {
 				valueField.Labels[k] = v
@@ -320,8 +322,7 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 				} else {
 					value = castToNullFloat(bucket.GetPath(metric.ID, "value"))
 				}
-				newFrame.Set(0, i, key)
-				newFrame.Set(1, i, value)
+				setFrameRow(newFrame, i, key, value)
 				// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 			}
 			*frames = append(*frames, newFrame)
@@ -634,4 +635,25 @@ func getErrorFromElasticResponse(response *es.SearchResponse) error {
 	}
 
 	return err
+}
+
+func setFrameRow(frame *data.Frame, i int, key, value null.Float) {
+	frame.Set(0, i, nullFloatToNullableTime(key))
+
+	if value.Valid {
+		frame.Set(1, i, &value.Float64)
+	} else {
+		frame.Set(1, i, nil)
+	}
+}
+
+func nullFloatToNullableTime(ts null.Float) *time.Time {
+	if !ts.Valid {
+		return nil
+	}
+
+	sec, fract := math.Modf(ts.Float64)
+	nsec := int64(fract * float64(time.Second))
+	timestamp := time.Unix(int64(sec), nsec)
+	return &timestamp
 }
