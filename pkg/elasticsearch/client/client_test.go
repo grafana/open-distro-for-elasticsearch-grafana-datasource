@@ -3,7 +3,6 @@ package es
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -417,9 +416,7 @@ func httpClientScenario(t *testing.T, desc string, ds *backend.DataSourceInstanc
 
 		from := time.Date(2018, 5, 15, 17, 50, 0, 0, time.UTC)
 		to := time.Date(2018, 5, 15, 17, 55, 0, 0, time.UTC)
-		fromStr := fmt.Sprintf("%d", from.UnixNano()/int64(time.Millisecond))
-		toStr := fmt.Sprintf("%d", to.UnixNano()/int64(time.Millisecond))
-		timeRange := tsdb.NewTimeRange(fromStr, toStr)
+		timeRange := &backend.TimeRange{From: from, To: to}
 
 		c, err := NewClient(context.Background(), ds, timeRange)
 		So(err, ShouldBeNil)

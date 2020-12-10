@@ -6,12 +6,15 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
 	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
 	"github.com/grafana/es-open-distro-datasource/pkg/null"
 	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
 	"github.com/grafana/es-open-distro-datasource/pkg/utils"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 const (
@@ -41,9 +44,8 @@ var newResponseParser = func(responses []*es.SearchResponse, targets []*Query, d
 	}
 }
 
-func (rp *responseParser) getTimeSeries() (*tsdb.Response, error) {
-	result := &tsdb.Response{}
-	result.Results = make(map[string]*tsdb.QueryResult)
+func (rp *responseParser) getTimeSeries() (*backend.QueryDataResponse, error) {
+	result := backend.NewQueryDataResponse()
 
 	if rp.Responses == nil {
 		return result, nil
@@ -58,35 +60,46 @@ func (rp *responseParser) getTimeSeries() (*tsdb.Response, error) {
 		}
 
 		if res.Error != nil {
-			result.Results[target.RefID] = getErrorFromElasticResponse(res)
-			result.Results[target.RefID].Meta = debugInfo
+			// result.Responses[target.RefID] = getErrorFromElasticResponse(res)
+			result.Responses[target.RefID] = backend.DataResponse{
+				Error: getErrorFromElasticResponse(res),
+				Frames: []*data.Frame{
+					{
+						Meta: &data.FrameMeta{
+							Custom: debugInfo,
+						},
+					},
+				},
+			}
 			continue
 		}
 
-		queryRes := tsdb.NewQueryResult()
-		queryRes.Meta = debugInfo
+		queryRes := backend.DataResponse{
+			Frames: data.Frames{},
+		}
+		// queryRes.Meta = debugInfo
 		props := make(map[string]string)
 		table := tsdb.Table{
 			Columns: make([]tsdb.TableColumn, 0),
 			Rows:    make([]tsdb.RowValues, 0),
 		}
-		err := rp.processBuckets(res.Aggregations, target, &queryRes.Series, &table, props, 0)
+		err := rp.processBuckets(res.Aggregations, target, &queryRes.Frames, &table, props, 0)
 		if err != nil {
 			return nil, err
 		}
-		rp.nameSeries(&queryRes.Series, target)
-		rp.trimDatapoints(&queryRes.Series, target)
+		rp.nameSeries(&queryRes.Frames, target)
+		rp.trimDatapoints(&queryRes.Frames, target)
 
-		if len(table.Rows) > 0 {
-			queryRes.Tables = append(queryRes.Tables, &table)
-		}
+		// if len(table.Rows) > 0 {
+		// 	queryRes.Tables = append(queryRes.Tables, &table)
+		// }
 
-		result.Results[target.RefID] = queryRes
+		result.Responses[target.RefID] = queryRes
 	}
 	return result, nil
 }
 
-func (rp *responseParser) processBuckets(aggs map[string]interface{}, target *Query, series *tsdb.TimeSeriesSlice, table *tsdb.Table, props map[string]string, depth int) error {
+func (rp *responseParser) processBuckets(aggs map[string]interface{}, target *Query, series *data.Frames, table *tsdb.Table, props map[string]string, depth int) error {
 	var err error
 	maxDepth := len(target.BucketAggs) - 1
 
@@ -163,7 +176,7 @@ func (rp *responseParser) processBuckets(aggs map[string]interface{}, target *Qu
 	return nil
 }
 
-func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, series *tsdb.TimeSeriesSlice, props map[string]string) error {
+func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, frames *data.Frames, props map[string]string) error {
 	for _, metric := range target.Metrics {
 		if metric.Hide {
 			continue
@@ -171,22 +184,30 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 
 		switch metric.Type {
 		case countType:
-			newSeries := tsdb.TimeSeries{
-				Tags: make(map[string]string),
-			}
+			// newSeries := tsdb.TimeSeries{
+			// 	Tags: make(map[string]string),
+			// }
+			buckets := esAgg.Get("buckets").MustArray()
+			newFrame := data.NewFrame(target.Alias,
+				data.NewField("time", nil, make([]time.Time, len(buckets))),
+				data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+			)
+			valueField := newFrame.Fields[1]
 
-			for _, v := range esAgg.Get("buckets").MustArray() {
+			for i, v := range buckets {
 				bucket := utils.NewJsonFromAny(v)
 				value := castToNullFloat(bucket.Get("doc_count"))
 				key := castToNullFloat(bucket.Get("key"))
-				newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
+				newFrame.Set(0, i, key)
+				newFrame.Set(1, i, value)
+				// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 			}
 
 			for k, v := range props {
-				newSeries.Tags[k] = v
+				valueField.Labels[k] = v
 			}
-			newSeries.Tags["metric"] = countType
-			*series = append(*series, &newSeries)
+			valueField.Labels["metric"] = countType
+			*frames = append(*frames, newFrame)
 
 		case percentilesType:
 			buckets := esAgg.Get("buckets").MustArray()
@@ -203,21 +224,27 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 			}
 			sort.Strings(percentileKeys)
 			for _, percentileName := range percentileKeys {
-				newSeries := tsdb.TimeSeries{
-					Tags: make(map[string]string),
-				}
+				newFrame := data.NewFrame(target.Alias,
+					data.NewField("time", nil, make([]time.Time, len(buckets))),
+					data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+				)
+				valueField := newFrame.Fields[1]
+
 				for k, v := range props {
-					newSeries.Tags[k] = v
+					valueField.Labels[k] = v
 				}
-				newSeries.Tags["metric"] = "p" + percentileName
-				newSeries.Tags["field"] = metric.Field
-				for _, v := range buckets {
+				valueField.Labels["metric"] = "p" + percentileName
+				valueField.Labels["field"] = metric.Field
+
+				for i, v := range buckets {
 					bucket := utils.NewJsonFromAny(v)
 					value := castToNullFloat(bucket.GetPath(metric.ID, "values", percentileName))
 					key := castToNullFloat(bucket.Get("key"))
-					newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
+					newFrame.Set(0, i, key)
+					newFrame.Set(1, i, value)
+					// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 				}
-				*series = append(*series, &newSeries)
+				*frames = append(*frames, newFrame)
 			}
 		case extendedStatsType:
 			buckets := esAgg.Get("buckets").MustArray()
@@ -234,16 +261,19 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 					continue
 				}
 
-				newSeries := tsdb.TimeSeries{
-					Tags: make(map[string]string),
-				}
-				for k, v := range props {
-					newSeries.Tags[k] = v
-				}
-				newSeries.Tags["metric"] = statName
-				newSeries.Tags["field"] = metric.Field
+				newFrame := data.NewFrame(target.Alias,
+					data.NewField("time", nil, make([]time.Time, len(buckets))),
+					data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+				)
+				valueField := newFrame.Fields[1]
 
-				for _, v := range buckets {
+				for k, v := range props {
+					valueField.Labels[k] = v
+				}
+				valueField.Labels["metric"] = statName
+				valueField.Labels["field"] = metric.Field
+
+				for i, v := range buckets {
 					bucket := utils.NewJsonFromAny(v)
 					key := castToNullFloat(bucket.Get("key"))
 					var value null.Float
@@ -255,22 +285,29 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 					default:
 						value = castToNullFloat(bucket.GetPath(metric.ID, statName))
 					}
-					newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
+					newFrame.Set(0, i, key)
+					newFrame.Set(1, i, value)
+					// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 				}
-				*series = append(*series, &newSeries)
+				*frames = append(*frames, newFrame)
 			}
 		default:
-			newSeries := tsdb.TimeSeries{
-				Tags: make(map[string]string),
-			}
-			for k, v := range props {
-				newSeries.Tags[k] = v
-			}
+			buckets := esAgg.Get("buckets").MustArray()
 
-			newSeries.Tags["metric"] = metric.Type
-			newSeries.Tags["field"] = metric.Field
-			newSeries.Tags["metricId"] = metric.ID
-			for _, v := range esAgg.Get("buckets").MustArray() {
+			newFrame := data.NewFrame(target.Alias,
+				data.NewField("time", nil, make([]time.Time, len(buckets))),
+				data.NewField(metric.Field, data.Labels{}, make([]float64, len(buckets))),
+			)
+			valueField := newFrame.Fields[1]
+
+			for k, v := range props {
+				valueField.Labels[k] = v
+			}
+			valueField.Labels["metric"] = metric.Type
+			valueField.Labels["field"] = metric.Field
+			valueField.Labels["metricId"] = metric.ID
+
+			for i, v := range buckets {
 				bucket := utils.NewJsonFromAny(v)
 				key := castToNullFloat(bucket.Get("key"))
 				valueObj, err := bucket.Get(metric.ID).Map()
@@ -283,9 +320,11 @@ func (rp *responseParser) processMetrics(esAgg *simplejson.Json, target *Query, 
 				} else {
 					value = castToNullFloat(bucket.GetPath(metric.ID, "value"))
 				}
-				newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
+				newFrame.Set(0, i, key)
+				newFrame.Set(1, i, value)
+				// newSeries.Points = append(newSeries.Points, tsdb.TimePoint{value, key})
 			}
-			*series = append(*series, &newSeries)
+			*frames = append(*frames, newFrame)
 		}
 	}
 	return nil
@@ -391,7 +430,7 @@ func (rp *responseParser) processAggregationDocs(esAgg *simplejson.Json, aggDef 
 	return nil
 }
 
-func (rp *responseParser) trimDatapoints(series *tsdb.TimeSeriesSlice, target *Query) {
+func (rp *responseParser) trimDatapoints(frames *data.Frames, target *Query) {
 	var histogram *BucketAgg
 	for _, bucketAgg := range target.BucketAggs {
 		if bucketAgg.Type == dateHistType {
@@ -409,39 +448,53 @@ func (rp *responseParser) trimDatapoints(series *tsdb.TimeSeriesSlice, target *Q
 		return
 	}
 
-	for _, s := range *series {
-		if len(s.Points) > trimEdges*2 {
-			s.Points = s.Points[trimEdges : len(s.Points)-trimEdges]
+	for _, f := range *frames {
+		if f.Rows() > trimEdges*2 {
+			for i := 0; i < trimEdges; i++ {
+				f.DeleteRow(i)
+			}
+			for i := f.Rows() - trimEdges; i < f.Rows(); i++ {
+				f.DeleteRow(i)
+			}
+			// f.Points = f.Points[trimEdges : len(f.Points)-trimEdges]
 		}
 	}
 }
 
-func (rp *responseParser) nameSeries(seriesList *tsdb.TimeSeriesSlice, target *Query) {
+func (rp *responseParser) nameSeries(frames *data.Frames, target *Query) {
 	set := make(map[string]string)
-	for _, v := range *seriesList {
-		if metricType, exists := v.Tags["metric"]; exists {
-			if _, ok := set[metricType]; !ok {
-				set[metricType] = ""
+	for _, v := range *frames {
+		if len(v.Fields) > 1 {
+			valueField := v.Fields[1]
+			if metricType, exists := valueField.Labels["metric"]; exists {
+				if _, ok := set[metricType]; !ok {
+					set[metricType] = ""
+				}
 			}
 		}
 	}
 	metricTypeCount := len(set)
-	for _, series := range *seriesList {
+	for _, series := range *frames {
 		series.Name = rp.getSeriesName(series, target, metricTypeCount)
 	}
 }
 
 var aliasPatternRegex = regexp.MustCompile(`\{\{([\s\S]+?)\}\}`)
 
-func (rp *responseParser) getSeriesName(series *tsdb.TimeSeries, target *Query, metricTypeCount int) string {
-	metricType := series.Tags["metric"]
+func (rp *responseParser) getSeriesName(series *data.Frame, target *Query, metricTypeCount int) string {
+	if len(series.Fields) < 2 {
+		return target.Alias
+	}
+
+	valueField := series.Fields[1]
+	metricType := valueField.Labels["metric"]
 	metricName := rp.getMetricName(metricType)
-	delete(series.Tags, "metric")
+	delete(valueField.Labels, "metric")
 
 	field := ""
-	if v, ok := series.Tags["field"]; ok {
+	if v, ok := valueField.Labels["field"]; ok {
 		field = v
-		delete(series.Tags, "field")
+		delete(valueField.Labels, "field")
 	}
 
 	if target.Alias != "" {
@@ -456,9 +509,9 @@ func (rp *responseParser) getSeriesName(series *tsdb.TimeSeries, target *Query, 
 			}
 
 			if strings.Index(group, "term ") == 0 {
-				seriesName = strings.Replace(seriesName, subMatch[0], series.Tags[group[5:]], 1)
+				seriesName = strings.Replace(seriesName, subMatch[0], valueField.Labels[group[5:]], 1)
 			}
-			if v, ok := series.Tags[group]; ok {
+			if v, ok := valueField.Labels[group]; ok {
 				seriesName = strings.Replace(seriesName, subMatch[0], v, 1)
 			}
 			if group == "metric" {
@@ -475,7 +528,7 @@ func (rp *responseParser) getSeriesName(series *tsdb.TimeSeries, target *Query, 
 	if field != "" && isPipelineAgg(metricType) {
 		if isPipelineAggWithMultipleBucketPaths(metricType) {
 			metricID := ""
-			if v, ok := series.Tags["metricId"]; ok {
+			if v, ok := valueField.Labels["metricId"]; ok {
 				metricID = v
 			}
 
@@ -507,14 +560,14 @@ func (rp *responseParser) getSeriesName(series *tsdb.TimeSeries, target *Query, 
 		metricName += " " + field
 	}
 
-	delete(series.Tags, "metricId")
+	delete(valueField.Labels, "metricId")
 
-	if len(series.Tags) == 0 {
+	if len(valueField.Labels) == 0 {
 		return metricName
 	}
 
 	name := ""
-	for _, v := range series.Tags {
+	for _, v := range valueField.Labels {
 		name += v + " "
 	}
 
@@ -565,20 +618,20 @@ func findAgg(target *Query, aggID string) (*BucketAgg, error) {
 	return nil, errors.New("can't found aggDef, aggID:" + aggID)
 }
 
-func getErrorFromElasticResponse(response *es.SearchResponse) *tsdb.QueryResult {
-	result := tsdb.NewQueryResult()
+func getErrorFromElasticResponse(response *es.SearchResponse) error {
+	err := errors.New("")
 	json := utils.NewJsonFromAny(response.Error)
 	reason := json.Get("reason").MustString()
 	rootCauseReason := json.Get("root_cause").GetIndex(0).Get("reason").MustString()
 
 	switch {
 	case rootCauseReason != "":
-		result.ErrorString = rootCauseReason
+		err = errors.New(rootCauseReason)
 	case reason != "":
-		result.ErrorString = reason
+		err = errors.New(reason)
 	default:
-		result.ErrorString = "Unknown elasticsearch error response"
+		err = errors.New("Unknown elasticsearch error response")
 	}
 
-	return result
+	return err
 }

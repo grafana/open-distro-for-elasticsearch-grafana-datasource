@@ -26,7 +26,7 @@ type intervalCalculator struct {
 }
 
 type IntervalCalculator interface {
-	Calculate(timeRange *TimeRange, minInterval time.Duration) Interval
+	Calculate(timeRange *backend.TimeRange, minInterval time.Duration) Interval
 }
 
 type IntervalOptions struct {
@@ -53,9 +53,9 @@ func (i *Interval) Milliseconds() int64 {
 	return i.Value.Nanoseconds() / int64(time.Millisecond)
 }
 
-func (ic *intervalCalculator) Calculate(timerange *TimeRange, minInterval time.Duration) Interval {
-	to := timerange.MustGetTo().UnixNano()
-	from := timerange.MustGetFrom().UnixNano()
+func (ic *intervalCalculator) Calculate(timerange *backend.TimeRange, minInterval time.Duration) Interval {
+	to := timerange.To.UnixNano()
+	from := timerange.From.UnixNano()
 	interval := time.Duration((to - from) / defaultRes)
 
 	if interval < minInterval {

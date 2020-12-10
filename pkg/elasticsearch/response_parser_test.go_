@@ -2,14 +2,12 @@ package elasticsearch
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/bitly/go-simplejson"
 	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
 	"github.com/grafana/es-open-distro-datasource/pkg/null"
-	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -996,22 +994,18 @@ func TestResponseParser(t *testing.T) {
 func newResponseParserForTest(tsdbQueries map[string]string, responseBody string) (*responseParser, error) {
 	from := time.Date(2018, 5, 15, 17, 50, 0, 0, time.UTC)
 	to := time.Date(2018, 5, 15, 17, 55, 0, 0, time.UTC)
-	fromStr := fmt.Sprintf("%d", from.UnixNano()/int64(time.Millisecond))
-	toStr := fmt.Sprintf("%d", to.UnixNano()/int64(time.Millisecond))
-	tsdbQuery := &tsdb.TsdbQuery{
-		Queries:   []*tsdb.Query{},
-		TimeRange: tsdb.NewTimeRange(fromStr, toStr),
+	tsdbQuery := &backend.QueryDataRequest{
+		Queries: []backend.DataQuery{},
 	}
 
 	for refID, tsdbQueryBody := range tsdbQueries {
-		tsdbQueryJSON, err := simplejson.NewJson([]byte(tsdbQueryBody))
-		if err != nil {
-			return nil, err
-		}
-
-		tsdbQuery.Queries = append(tsdbQuery.Queries, &tsdb.Query{
-			Model: tsdbQueryJSON,
-			RefId: refID,
+		tsdbQuery.Queries = append(tsdbQuery.Queries, backend.DataQuery{
+			JSON:  []byte(tsdbQueryBody),
+			RefID: refID,
+			TimeRange: backend.TimeRange{
+				From: from,
+				To:   to,
+			},
 		})
 	}
 

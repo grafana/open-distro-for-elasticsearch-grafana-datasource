@@ -63,7 +63,7 @@ type Client interface {
 }
 
 // NewClient creates a new elasticsearch client
-var NewClient = func(ctx context.Context, ds *backend.DataSourceInstanceSettings, timeRange *tsdb.TimeRange) (Client, error) {
+var NewClient = func(ctx context.Context, ds *backend.DataSourceInstanceSettings, timeRange *backend.TimeRange) (Client, error) {
 	jsonDataStr := ds.JSONData
 	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
 	if err != nil {
@@ -114,7 +114,7 @@ type baseClientImpl struct {
 	version      int
 	timeField    string
 	indices      []string
-	timeRange    *tsdb.TimeRange
+	timeRange    *backend.TimeRange
 	debugEnabled bool
 }
 

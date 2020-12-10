@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitly/go-simplejson"
 	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
 	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -764,34 +764,27 @@ func (c *fakeClient) MultiSearch() *es.MultiSearchRequestBuilder {
 	return c.builder
 }
 
-func newTsdbQuery(body string) (*tsdb.TsdbQuery, error) {
-	json, err := simplejson.NewJson([]byte(body))
-	if err != nil {
-		return nil, err
-	}
-	return &tsdb.TsdbQuery{
-		Queries: []*tsdb.Query{
+func newTsdbQuery(body string) (*backend.QueryDataRequest, error) {
+	return &backend.QueryDataRequest{
+		Queries: []backend.DataQuery{
 			{
-				Model: json,
+				JSON: []byte(body),
 			},
 		},
 	}, nil
 }
 
-func executeTsdbQuery(c es.Client, body string, from, to time.Time, minInterval time.Duration) (*tsdb.Response, error) {
-	json, err := simplejson.NewJson([]byte(body))
-	if err != nil {
-		return nil, err
-	}
-	fromStr := fmt.Sprintf("%d", from.UnixNano()/int64(time.Millisecond))
-	toStr := fmt.Sprintf("%d", to.UnixNano()/int64(time.Millisecond))
-	tsdbQuery := &tsdb.TsdbQuery{
-		Queries: []*tsdb.Query{
+func executeTsdbQuery(c es.Client, body string, from, to time.Time, minInterval time.Duration) (*backend.QueryDataResponse, error) {
+	tsdbQuery := &backend.QueryDataRequest{
+		Queries: []backend.DataQuery{
 			{
-				Model: json,
+				JSON: []byte(body),
+				TimeRange: backend.TimeRange{
+					From: from,
+					To:   to,
+				},
 			},
 		},
-		TimeRange: tsdb.NewTimeRange(fromStr, toStr),
 	}
 	query := newTimeSeriesQuery(c, tsdbQuery, tsdb.NewIntervalCalculator(&tsdb.IntervalOptions{MinInterval: minInterval}))
 	return query.execute()

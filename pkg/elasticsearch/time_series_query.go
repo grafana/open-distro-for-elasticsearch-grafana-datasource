@@ -3,28 +3,31 @@ package elasticsearch
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/bitly/go-simplejson"
 	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
 	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
 	"github.com/grafana/es-open-distro-datasource/pkg/utils"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 type timeSeriesQuery struct {
 	client             es.Client
-	tsdbQuery          *tsdb.TsdbQuery
+	tsdbQuery          *backend.QueryDataRequest
 	intervalCalculator tsdb.IntervalCalculator
 }
 
-var newTimeSeriesQuery = func(client es.Client, tsdbQuery *tsdb.TsdbQuery, intervalCalculator tsdb.IntervalCalculator) *timeSeriesQuery {
+var newTimeSeriesQuery = func(client es.Client, req *backend.QueryDataRequest, intervalCalculator tsdb.IntervalCalculator) *timeSeriesQuery {
 	return &timeSeriesQuery{
 		client:             client,
-		tsdbQuery:          tsdbQuery,
+		tsdbQuery:          req,
 		intervalCalculator: intervalCalculator,
 	}
 }
 
-func (e *timeSeriesQuery) execute() (*tsdb.Response, error) {
+func (e *timeSeriesQuery) execute() (*backend.QueryDataResponse, error) {
 	tsQueryParser := newTimeSeriesQueryParser()
 	queries, err := tsQueryParser.parse(e.tsdbQuery)
 	if err != nil {
@@ -33,11 +36,11 @@ func (e *timeSeriesQuery) execute() (*tsdb.Response, error) {
 
 	ms := e.client.MultiSearch()
 
-	from := fmt.Sprintf("%d", e.tsdbQuery.TimeRange.GetFromAsMsEpoch())
-	to := fmt.Sprintf("%d", e.tsdbQuery.TimeRange.GetToAsMsEpoch())
-	result := &tsdb.Response{
-		Results: make(map[string]*tsdb.QueryResult),
-	}
+	fromMs := e.tsdbQuery.Queries[0].TimeRange.From.UnixNano() / int64(time.Millisecond)
+	toMs := e.tsdbQuery.Queries[0].TimeRange.To.UnixNano() / int64(time.Millisecond)
+	from := fmt.Sprintf("%d", fromMs)
+	to := fmt.Sprintf("%d", toMs)
+	result := backend.NewQueryDataResponse()
 	for _, q := range queries {
 		if err := e.processQuery(q, ms, from, to, result); err != nil {
 			return nil, err
@@ -59,12 +62,12 @@ func (e *timeSeriesQuery) execute() (*tsdb.Response, error) {
 }
 
 func (e *timeSeriesQuery) processQuery(q *Query, ms *es.MultiSearchRequestBuilder, from, to string,
-	result *tsdb.Response) error {
+	result *backend.QueryDataResponse) error {
 	minInterval, err := e.client.GetMinInterval(q.Interval)
 	if err != nil {
 		return err
 	}
-	interval := e.intervalCalculator.Calculate(e.tsdbQuery.TimeRange, minInterval)
+	interval := e.intervalCalculator.Calculate(&e.tsdbQuery.Queries[0].TimeRange, minInterval)
 
 	b := ms.Search(interval)
 	b.Size(0)
@@ -77,10 +80,9 @@ func (e *timeSeriesQuery) processQuery(q *Query, ms *es.MultiSearchRequestBuilde
 
 	if len(q.BucketAggs) == 0 {
 		if len(q.Metrics) == 0 || q.Metrics[0].Type != "raw_document" {
-			result.Results[q.RefID] = &tsdb.QueryResult{
-				RefId:       q.RefID,
-				Error:       fmt.Errorf("invalid query, missing metrics and aggregations"),
-				ErrorString: "invalid query, missing metrics and aggregations",
+			result.Responses[q.RefID] = backend.DataResponse{
+				Frames: []*data.Frame{},
+				Error:  fmt.Errorf("invalid query, missing metrics and aggregations"),
 			}
 			return nil
 		}
@@ -296,10 +298,10 @@ func newTimeSeriesQueryParser() *timeSeriesQueryParser {
 	return &timeSeriesQueryParser{}
 }
 
-func (p *timeSeriesQueryParser) parse(tsdbQuery *tsdb.TsdbQuery) ([]*Query, error) {
+func (p *timeSeriesQueryParser) parse(tsdbQuery *backend.QueryDataRequest) ([]*Query, error) {
 	queries := make([]*Query, 0)
 	for _, q := range tsdbQuery.Queries {
-		model := q.Model
+		model, _ := simplejson.NewJson(q.JSON)
 		timeField, err := model.Get("timeField").String()
 		if err != nil {
 			return nil, err
@@ -314,7 +316,7 @@ func (p *timeSeriesQueryParser) parse(tsdbQuery *tsdb.TsdbQuery) ([]*Query, erro
 			return nil, err
 		}
 		alias := model.Get("alias").MustString("")
-		interval := strconv.FormatInt(q.IntervalMs, 10) + "ms"
+		interval := strconv.FormatInt(q.Interval.Milliseconds(), 10) + "ms"
 
 		queries = append(queries, &Query{
 			TimeField:  timeField,
@@ -323,7 +325,7 @@ func (p *timeSeriesQueryParser) parse(tsdbQuery *tsdb.TsdbQuery) ([]*Query, erro
 			Metrics:    metrics,
 			Alias:      alias,
 			Interval:   interval,
-			RefID:      q.RefId,
+			RefID:      q.RefID,
 		})
 	}
 
