@@ -1,5 +1,5 @@
 import { GrafanaTheme } from '@grafana/data';
-import { IconButton, InlineLabel, stylesFactory, useTheme } from '@grafana/ui';
+import { IconButton, stylesFactory, useTheme } from '@grafana/ui';
 import { css } from 'emotion';
 import { noop } from 'lodash';
 import React, { FunctionComponent } from 'react';
@@ -23,7 +23,7 @@ export const QueryEditorRow: FunctionComponent<Props> = ({
 
   return (
     <fieldset className={styles.root}>
-      <InlineLabel>
+      <div className={styles.wrapper}>
         <legend className={styles.label}>{label}</legend>
         {onHideClick && (
           <IconButton
@@ -45,7 +45,7 @@ export const QueryEditorRow: FunctionComponent<Props> = ({
           disabled={!onRemoveClick}
           aria-label="remove metric"
         />
-      </InlineLabel>
+      </div>
       {children}
     </fieldset>
   );
@@ -56,6 +56,25 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     root: css`
       display: flex;
       margin-bottom: ${theme.spacing.xs};
+    `,
+    // FIXME: this is taken from  `getInlineLabelStyles` in '@grafana/ui/src/components/Forms/InlineLabel' with width = 17
+    // We should have a better way to access / use these styles.
+    wrapper: css`
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      padding: 0 ${theme.spacing.sm};
+      font-weight: ${theme.typography.weight.semibold};
+      font-size: ${theme.typography.size.sm};
+      background-color: ${theme.colors.bg2};
+      height: ${theme.height.md}px;
+      line-height: ${theme.height.md}px;
+      margin-right: ${theme.spacing.xs};
+      border-radius: ${theme.border.radius.md};
+      border: none;
+      width: 136px;
+      color: ${theme.colors.textHeading};
     `,
     label: css`
       font-size: ${theme.typography.size.sm};
