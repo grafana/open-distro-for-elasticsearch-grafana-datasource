@@ -1,7 +1,13 @@
-# Elasticsearch Data Source -  Native Plugin
+# Open Distro Data for Elasticsearch Source - Native Plugin
 
-Grafana ships with **advanced support** for Elasticsearch. You can do many types of simple or complex elasticsearch queries to visualize logs or metrics stored in Elasticsearch. You can also annotate your graphs with log events stored in Elasticsearch.
+## Development
 
-Read more about it here:
+`$ docker-compose up` starts a single node odfe cluster & kibana
 
-[https://grafana.com/docs/grafana/latest/features/datasources/elasticsearch/](https://grafana.com/docs/grafana/latest/features/datasources/elasticsearch/)
+### Datasource Configuration
+
+URL: https://localhost:9200
+Basic Auth: `admin:admin`
+Skip TLS Verify: `true`
+
+### TODO: Fake Data gen
