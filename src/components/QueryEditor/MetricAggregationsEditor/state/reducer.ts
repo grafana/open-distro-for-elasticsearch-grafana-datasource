@@ -81,6 +81,7 @@ export const reducer = (
           hide: !metric.hide,
         };
       });
+
     case CHANGE_METRIC_SETTING:
       // @ts-ignore
       return state.map(metric => {
@@ -141,7 +142,7 @@ export const reducer = (
       });
 
     case INIT:
-      return [defaultMetricAgg()];
+      return [defaultMetricAgg('1')];
 
     default:
       return state;

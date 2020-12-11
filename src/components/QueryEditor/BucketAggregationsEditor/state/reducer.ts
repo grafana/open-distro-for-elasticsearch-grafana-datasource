@@ -103,7 +103,7 @@ export const reducer = (
       });
 
     case INIT:
-      return [defaultBucketAgg()];
+      return [defaultBucketAgg('2')];
 
     default:
       return state;
