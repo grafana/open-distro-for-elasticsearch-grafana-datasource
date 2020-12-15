@@ -2,17 +2,25 @@ package elasticsearch
 
 import (
 	"github.com/bitly/go-simplejson"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 // Query represents the time series query model of the datasource
 type Query struct {
 	TimeField  string       `json:"timeField"`
 	RawQuery   string       `json:"query"`
+	QueryType  string		`json:"queryType"`
 	BucketAggs []*BucketAgg `json:"bucketAggs"`
 	Metrics    []*MetricAgg `json:"metrics"`
 	Alias      string       `json:"alias"`
 	Interval   string
 	RefID      string
+}
+
+// queryHandler is an interface for handling queries of the same type
+type queryHandler interface {
+	processQuery(q *Query) error
+	executeQueries() (*backend.QueryDataResponse, error)
 }
 
 // BucketAgg represents a bucket aggregation of the time series query model of the datasource
@@ -96,3 +104,9 @@ func describeMetric(metricType, field string) string {
 	}
 	return text + " " + field
 }
+
+// PPL date time type formats
+const (
+	pplTSFormat   = "2006-01-02 15:04:05.000000"
+	pplDateFormat = "2006-01-02"
+)
