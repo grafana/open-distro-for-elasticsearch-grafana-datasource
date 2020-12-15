@@ -18,6 +18,7 @@ export interface ElasticsearchOptions extends DataSourceJsonData {
   logMessageField?: string;
   logLevelField?: string;
   dataLinks?: DataLinkConfig[];
+  pplSupportEnabled?: boolean;
 }
 
 interface MetricConfiguration<T extends MetricAggregationType> {
@@ -64,6 +65,8 @@ export interface ElasticsearchQuery extends DataQuery {
   bucketAggs?: BucketAggregation[];
   metrics?: MetricAggregation[];
   timeField?: string;
+  queryType?: ElasticsearchQueryType;
+  format?: string;
 }
 
 export type DataLinkConfig = {
@@ -85,4 +88,9 @@ export interface PromQuery extends DataQuery {
   requestId?: string;
   showingGraph?: boolean;
   showingTable?: boolean;
+}
+
+export enum ElasticsearchQueryType {
+  Lucene = 'lucene',
+  PPL = 'PPL',
 }
