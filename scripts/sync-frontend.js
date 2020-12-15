@@ -51,20 +51,20 @@ async function listContent(path) {
 
 async function downloadFile(url, destPath) {
   const file = fs.createWriteStream(destPath);
-  await https
-    .get(url, response => {
+  const fileRequest = await https.get(url);
+  await new Promise((resolve, reject) => {
+    fileRequest.on('response', response => {
       response.pipe(file);
       file
         .on('finish', () => {
           file.close();
+          resolve();
         })
         .on('error', err => {
           console.log(err.message);
         });
-    })
-    .on('error', err => {
-      console.log(err.message);
     });
+  });
 }
 
 function printUsage() {
