@@ -57,8 +57,11 @@ type Client interface {
 	GetVersion() int
 	GetTimeField() string
 	GetMinInterval(queryInterval string) (time.Duration, error)
+	GetIndex() string
 	ExecuteMultisearch(r *MultiSearchRequest) (*MultiSearchResponse, error)
 	MultiSearch() *MultiSearchRequestBuilder
+	ExecutePPLQuery(r *PPLRequest) (*PPLResponse, error)
+	PPL() *PPLRequestBuilder
 	EnableDebug()
 }
 
@@ -91,7 +94,12 @@ var NewClient = func(ctx context.Context, ds *backend.DataSourceInstanceSettings
 		return nil, err
 	}
 
-	clientLog.Debug("Creating new client", "version", version, "timeField", timeField, "indices", strings.Join(indices, ", "))
+	index, err := ip.GetPPLIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	clientLog.Debug("Creating new client", "version", version, "timeField", timeField, "indices", strings.Join(indices, ", "), "PPL index", index)
 
 	switch version {
 	case 2, 5, 56, 60, 70:
@@ -101,6 +109,7 @@ var NewClient = func(ctx context.Context, ds *backend.DataSourceInstanceSettings
 			version:   version,
 			timeField: timeField,
 			indices:   indices,
+			index:     index,
 			timeRange: timeRange,
 		}, nil
 	}
@@ -114,6 +123,7 @@ type baseClientImpl struct {
 	version      int
 	timeField    string
 	indices      []string
+	index        string
 	timeRange    *backend.TimeRange
 	debugEnabled bool
 }
@@ -124,6 +134,10 @@ func (c *baseClientImpl) GetVersion() int {
 
 func (c *baseClientImpl) GetTimeField() string {
 	return c.timeField
+}
+
+func (c *baseClientImpl) GetIndex() string {
+	return c.index
 }
 
 func (c *baseClientImpl) GetMinInterval(queryInterval string) (time.Duration, error) {
@@ -354,4 +368,175 @@ func (c *baseClientImpl) MultiSearch() *MultiSearchRequestBuilder {
 
 func (c *baseClientImpl) EnableDebug() {
 	c.debugEnabled = true
+}
+
+type pplRequest struct {
+	body interface{}
+}
+
+func (c *baseClientImpl) executePPLRequest(uriPath string, request *pplRequest) (*pplresponse, error) {
+	bytes, err := c.encodePPLRequests(request)
+	if err != nil {
+		return nil, err
+	}
+	return c.executePPLQueryRequest(http.MethodPost, uriPath, bytes)
+}
+
+func (c *baseClientImpl) encodePPLRequests(requests *pplRequest) ([]byte, error) {
+	clientLog.Debug("Encoding PPL requests to json")
+	start := time.Now()
+
+	reqBody, err := json.Marshal(requests.body)
+	if err != nil {
+		return nil, err
+	}
+
+	body := string(reqBody)
+	// replace the escaped characters in time range filtering
+	body = strings.ReplaceAll(body, "\\u003c", "<")
+	body = strings.ReplaceAll(body, "\\u003e", ">")
+
+	elapsed := time.Since(start)
+	clientLog.Debug("Encoded PPL requests to json", "took", elapsed)
+
+	return []byte(body + "\n"), nil
+}
+
+func (c *baseClientImpl) executePPLQueryRequest(method, uriPath string, body []byte) (*pplresponse, error) {
+	u, err := url.Parse(c.ds.URL)
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, uriPath)
+
+	var req *http.Request
+	if method == http.MethodPost {
+		req, err = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(body))
+	} else {
+		req, err = http.NewRequest(http.MethodGet, u.String(), nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	clientLog.Debug("Executing request", "url", req.URL.String(), "method", method)
+
+	var reqInfo *PPLRequestInfo
+	if c.debugEnabled {
+		reqInfo = &PPLRequestInfo{
+			Method: req.Method,
+			URL:    req.URL.String(),
+			Data:   string(body),
+		}
+	}
+
+	req.Header.Set("User-Agent", "Grafana")
+	req.Header.Set("Content-Type", "application/json")
+
+	secureJsonData := c.ds.DecryptedSecureJSONData
+
+	if c.ds.BasicAuthEnabled {
+		clientLog.Debug("Request configured to use basic authentication")
+		basicAuthPassword := secureJsonData["basicAuthPassword"]
+		req.SetBasicAuth(c.ds.BasicAuthUser, basicAuthPassword)
+	}
+
+	if !c.ds.BasicAuthEnabled && c.ds.User != "" {
+		clientLog.Debug("Request configured to use basic authentication")
+		password := secureJsonData["password"]
+		req.SetBasicAuth(c.ds.User, password)
+	}
+
+	httpClient, err := newDatasourceHttpClient(c.ds)
+	if err != nil {
+		return nil, err
+	}
+
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+		clientLog.Debug("Executed request", "took", elapsed)
+	}()
+	//nolint:bodyclose
+	resp, err := ctxhttp.Do(c.ctx, httpClient, req)
+	if err != nil {
+		return nil, err
+	}
+	return &pplresponse{
+		httpResponse: resp,
+		reqInfo:      reqInfo,
+	}, nil
+}
+
+func (c *baseClientImpl) ExecutePPLQuery(r *PPLRequest) (*PPLResponse, error) {
+	clientLog.Debug("Executing PPL")
+
+	req := createPPLRequest(r)
+	clientRes, err := c.executePPLRequest("_opendistro/_ppl", req)
+	if err != nil {
+		return nil, err
+	}
+	resp := clientRes.httpResponse
+	defer resp.Body.Close()
+
+	clientLog.Debug("Received PPL response", "code", resp.StatusCode, "status", resp.Status, "content-length", resp.ContentLength)
+
+	start := time.Now()
+	clientLog.Debug("Decoding PPL json response")
+
+	var bodyBytes []byte
+	if c.debugEnabled {
+		tmpBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			clientLog.Error("failed to read http response bytes", "error", err)
+		} else {
+			bodyBytes = make([]byte, len(tmpBytes))
+			copy(bodyBytes, tmpBytes)
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(tmpBytes))
+		}
+	}
+
+	var pr PPLResponse
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&pr)
+	if err != nil {
+		return nil, err
+	}
+
+	elapsed := time.Since(start)
+	clientLog.Debug("Decoded PPL json response", "took", elapsed)
+
+	pr.Status = resp.StatusCode
+
+	if c.debugEnabled {
+		bodyJSON, err := simplejson.NewFromReader(bytes.NewBuffer(bodyBytes))
+		var data *simplejson.Json
+		if err != nil {
+			clientLog.Error("failed to decode http response into json", "error", err)
+		} else {
+			data = bodyJSON
+		}
+
+		pr.DebugInfo = &PPLDebugInfo{
+			Request: clientRes.reqInfo,
+			Response: &PPLResponseInfo{
+				Status: resp.StatusCode,
+				Data:   data,
+			},
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &pr, nil
+}
+
+func createPPLRequest(request *PPLRequest) *pplRequest {
+	return &pplRequest{
+		body: request,
+	}
+}
+
+func (c *baseClientImpl) PPL() *PPLRequestBuilder {
+	return NewPPLRequestBuilder(c.GetIndex())
 }

@@ -314,3 +314,56 @@ func (a *PipelineAggregation) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(root)
 }
+
+type pplresponse struct {
+	httpResponse *http.Response
+	reqInfo      *PPLRequestInfo
+}
+
+type PPLRequestInfo struct {
+	Method string `json:"method"`
+	URL    string `json:"url"`
+	Data   string `json:"data"`
+}
+
+type PPLResponseInfo struct {
+	Status int              `json:"status"`
+	Data   *simplejson.Json `json:"data"`
+}
+
+type PPLDebugInfo struct {
+	Request  *PPLRequestInfo  `json:"request"`
+	Response *PPLResponseInfo `json:"response"`
+}
+
+// PPLRequest represents the PPL query object.
+type PPLRequest struct {
+	Query string
+}
+
+// MarshalJSON returns the JSON encoding of the PPL query string filter.
+func (req *PPLRequest) MarshalJSON() ([]byte, error) {
+	root := map[string]interface{}{
+		"query": req.Query,
+	}
+
+	return json.Marshal(root)
+}
+
+// PPLResponse represents a PPL response
+type PPLResponse struct {
+	Status    int                    `json:"status,omitempty"`
+	Error     map[string]interface{} `json:"error"`
+	Schema    []FieldSchema          `json:"schema"`
+	Datarows  []Datarow              `json:"datarows"`
+	DebugInfo *PPLDebugInfo          `json:"-"`
+}
+
+// FieldSchema represents the schema for a single field from the PPL response result set
+type FieldSchema struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// Datarow represents a datarow from the PPL response result set
+type Datarow []interface{}
