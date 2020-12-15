@@ -24,6 +24,7 @@ export const ConfigEditor = (props: Props) => {
           options.jsonData.maxConcurrentShardRequests || defaultMaxConcurrentShardRequests(esVersion),
         logMessageField: options.jsonData.logMessageField || '',
         logLevelField: options.jsonData.logLevelField || '',
+        pplEnabled: options.jsonData.pplEnabled ?? true,
       },
     });
   }, []);
