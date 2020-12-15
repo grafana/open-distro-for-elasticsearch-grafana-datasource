@@ -20,7 +20,7 @@ import { ElasticQueryBuilder } from './query_builder';
 import { toUtc } from '@grafana/data';
 import { defaultBucketAgg, hasMetricOfType } from './query_def';
 import { getBackendSrv, getDataSourceSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
-import { DataLinkConfig, ElasticsearchOptions, ElasticsearchQuery } from './types';
+import { DataLinkConfig, ElasticsearchOptions, ElasticsearchQuery, ElasticsearchQueryType } from './types';
 import { metricAggregationConfig } from './components/QueryEditor/MetricAggregationsEditor/utils';
 import {
   isMetricAggregationWithField,
@@ -59,6 +59,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   logLevelField?: string;
   dataLinks: DataLinkConfig[];
   languageProvider: LanguageProvider;
+  pplEnabled?: boolean;
 
   constructor(
     instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>,
@@ -93,6 +94,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       this.logLevelField = undefined;
     }
     this.languageProvider = new LanguageProvider(this);
+    this.pplEnabled = settingsData.pplEnabled ?? true;
   }
 
   private request(method: string, url: string, data?: undefined) {
@@ -715,6 +717,10 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     }
 
     return false;
+  }
+
+  getSupportedQueryTypes(): ElasticsearchQueryType[] {
+    return [ElasticsearchQueryType.Lucene, ...(this.pplEnabled ? [ElasticsearchQueryType.PPL] : [])];
   }
 }
 

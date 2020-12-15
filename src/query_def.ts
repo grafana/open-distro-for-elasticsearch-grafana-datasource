@@ -6,6 +6,7 @@ import {
   MetricAggregationType,
 } from './components/QueryEditor/MetricAggregationsEditor/aggregations';
 import { metricAggregationConfig, pipelineOptions } from './components/QueryEditor/MetricAggregationsEditor/utils';
+import { PPLFormatType } from './components/QueryEditor/PPLFormatEditor/formats';
 
 export const extendedStats: ExtendedStat[] = [
   { label: 'Avg', value: 'avg' },
@@ -32,6 +33,10 @@ export function defaultMetricAgg(id = '1'): MetricAggregation {
 
 export function defaultBucketAgg(id = '1'): BucketAggregation {
   return { type: 'date_histogram', id, settings: { interval: 'auto' } };
+}
+
+export function defaultPPLFormat(): PPLFormatType {
+  return 'table';
 }
 
 export const findMetricById = (metrics: MetricAggregation[], id: MetricAggregation['id']) =>

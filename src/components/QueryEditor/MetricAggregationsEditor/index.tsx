@@ -26,7 +26,8 @@ export const MetricAggregationsEditor: FunctionComponent<Props> = ({ nextId }) =
           label={`Metric (${metric.id})`}
           hidden={metric.hide}
           onHideClick={() => dispatch(toggleMetricVisibility(metric.id))}
-          onRemoveClick={totalMetrics > 1 && (() => dispatch(removeMetric(metric.id)))}
+          onRemoveClick={() => dispatch(removeMetric(metric.id))}
+          disableRemove={!(totalMetrics > 1)}
         >
           <MetricEditor value={metric} />
 
