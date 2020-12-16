@@ -1,4 +1,4 @@
 #!/bin/bash
 
-git checkout -b sync-upstream
+git checkout -B sync-upstream
 node ./scripts/sync-frontend.js
