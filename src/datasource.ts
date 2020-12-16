@@ -1,4 +1,6 @@
 import _ from 'lodash';
+import { from, merge, of, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   DataSourceApi,
   DataSourceInstanceSettings,
@@ -10,8 +12,10 @@ import {
   PluginMeta,
   DataQuery,
   MetricFindValue,
+  dateTime,
   TimeRange,
   DefaultTimeRange,
+  LoadingState,
 } from '@grafana/data';
 import LanguageProvider from './language_provider';
 import { ElasticResponse } from './elastic_response';
@@ -316,18 +320,28 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   }
 
   private interpolateLuceneQuery(queryString: string, scopedVars: ScopedVars) {
-    // Elasticsearch queryString should always be '*' if empty string
+    // Elasticsearch Lucene queryString should always be '*' if empty string
     return this.templateSrv.replace(queryString, scopedVars, 'lucene') || '*';
+  }
+
+  private interpolatePPLQuery(queryString: string, scopedVars: ScopedVars) {
+    return this.templateSrv.replace(queryString, scopedVars, 'pipe');
   }
 
   interpolateVariablesInQueries(queries: ElasticsearchQuery[], scopedVars: ScopedVars): ElasticsearchQuery[] {
     let expandedQueries = queries;
     if (queries && queries.length > 0) {
       expandedQueries = queries.map(query => {
+        let interpolatedQuery;
+        if (query.queryType === ElasticsearchQueryType.PPL) {
+          interpolatedQuery = this.interpolatePPLQuery(query.query || '', scopedVars);
+        } else {
+          interpolatedQuery = this.interpolateLuceneQuery(query.query || '', scopedVars);
+        }
         const expandedQuery = {
           ...query,
           datasource: this.name,
-          query: this.interpolateLuceneQuery(query.query || '', scopedVars),
+          query: interpolatedQuery,
         };
 
         for (let bucketAgg of query.bucketAggs || []) {
@@ -432,48 +446,57 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     return text;
   }
 
-  query(options: DataQueryRequest<ElasticsearchQuery>): Promise<DataQueryResponse> {
-    let payload = '';
+  query(options: DataQueryRequest<ElasticsearchQuery>): Observable<DataQueryResponse> {
     const targets = this.interpolateVariablesInQueries(_.cloneDeep(options.targets), options.scopedVars);
-    const sentTargets: ElasticsearchQuery[] = [];
 
-    // @ts-ignore
-    // add global adhoc filters to timeFilter
-    const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+    const luceneTargets: ElasticsearchQuery[] = [];
+    const pplTargets: ElasticsearchQuery[] = [];
 
     for (const target of targets) {
       if (target.hide) {
         continue;
       }
 
-      let queryObj;
-      if (target.isLogsQuery || hasMetricOfType(target, 'logs')) {
-        target.bucketAggs = [defaultBucketAgg()];
-        target.metrics = [];
-        // Setting this for metrics queries that are typed as logs
-        target.isLogsQuery = true;
-        queryObj = this.queryBuilder.getLogsQuery(target, adhocFilters, target.query);
-      } else {
-        if (target.alias) {
-          target.alias = this.templateSrv.replace(target.alias, options.scopedVars, 'lucene');
-        }
-
-        queryObj = this.queryBuilder.build(target, adhocFilters, target.query);
+      switch (target.queryType) {
+        case ElasticsearchQueryType.PPL:
+          pplTargets.push(target);
+          break;
+        case ElasticsearchQueryType.Lucene:
+        default:
+          luceneTargets.push(target);
       }
-
-      const esQuery = JSON.stringify(queryObj);
-
-      const searchType = queryObj.size === 0 && this.esVersion < 5 ? 'count' : 'query_then_fetch';
-      const header = this.getQueryHeader(searchType, options.range.from, options.range.to);
-      payload += header + '\n';
-
-      payload += esQuery + '\n';
-
-      sentTargets.push(target);
     }
 
-    if (sentTargets.length === 0) {
-      return Promise.resolve({ data: [] });
+    const subQueries: Array<Observable<DataQueryResponse>> = [];
+
+    if (luceneTargets.length) {
+      const luceneResponses = this.executeLuceneQueries(luceneTargets, options);
+      subQueries.push(luceneResponses);
+    }
+    if (pplTargets.length) {
+      const pplResponses = this.executePPLQueries(pplTargets, options);
+      subQueries.push(pplResponses);
+    }
+    if (subQueries.length === 0) {
+      return of({
+        data: [],
+        state: LoadingState.Done,
+      });
+    }
+    return merge(...subQueries);
+  }
+
+  /**
+   * Execute all Lucene queries. Returns an Observable to be merged.
+   */
+  private executeLuceneQueries(
+    targets: ElasticsearchQuery[],
+    options: DataQueryRequest<ElasticsearchQuery>
+  ): Observable<DataQueryResponse> {
+    let payload = '';
+
+    for (const target of targets) {
+      payload += this.createLuceneQuery(target, options);
     }
 
     // We replace the range here for actual values. We need to replace it together with enclosing "" so that we replace
@@ -484,21 +507,114 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     payload = payload.replace(/"\$timeTo"/g, options.range.to.valueOf().toString());
     payload = this.templateSrv.replace(payload, options.scopedVars);
 
-    const url = this.getMultiSearchUrl();
+    return from(this.post(this.getMultiSearchUrl(), payload)).pipe(
+      map((res: any) => {
+        const er = new ElasticResponse(targets, res);
 
-    return this.post(url, payload).then((res: any) => {
-      const er = new ElasticResponse(sentTargets, res);
-
-      if (sentTargets.some(target => target.isLogsQuery)) {
-        const response = er.getLogs(this.logMessageField, this.logLevelField);
-        for (const dataFrame of response.data) {
-          enhanceDataFrame(dataFrame, this.dataLinks);
+        if (targets.some(target => target.isLogsQuery)) {
+          const response = er.getLogs(this.logMessageField, this.logLevelField);
+          for (const dataFrame of response.data) {
+            enhanceDataFrame(dataFrame, this.dataLinks);
+          }
+          return response;
         }
-        return response;
-      }
 
-      return er.getTimeSeries();
-    });
+        return er.getTimeSeries();
+      })
+    );
+  }
+
+  /**
+   * Execute all PPL queries. Returns an Observable to be merged.
+   */
+  private executePPLQueries(
+    targets: ElasticsearchQuery[],
+    options: DataQueryRequest<ElasticsearchQuery>
+  ): Observable<DataQueryResponse> {
+    const subQueries: Array<Observable<DataQueryResponse>> = [];
+
+    for (const target of targets) {
+      let payload = this.createPPLQuery(target, options);
+
+      const rangeFrom = dateTime(options.range.from.valueOf()).format('YYYY-MM-DD HH:mm:ss');
+      const rangeTo = dateTime(options.range.to.valueOf()).format('YYYY-MM-DD HH:mm:ss');
+      // Replace the range here for actual values.
+      payload = payload.replace(/\$timeTo/g, rangeTo);
+      payload = payload.replace(/\$timeFrom/g, rangeFrom);
+      payload = payload.replace(/\$timestamp/g, `\`${this.timeField}\``);
+      subQueries.push(
+        from(this.post(this.getPPLUrl(), payload)).pipe(
+          map((res: any) => {
+            const er = new ElasticResponse([target], res, ElasticsearchQueryType.PPL);
+
+            if (targets.some(target => target.isLogsQuery)) {
+              const response = er.getLogs(this.logMessageField, this.logLevelField);
+              for (const dataFrame of response.data) {
+                enhanceDataFrame(dataFrame, this.dataLinks);
+              }
+              return response;
+            } else if (targets.some(target => target.format === 'table')) {
+              return er.getTable();
+            }
+            return er.getTimeSeries();
+          })
+        )
+      );
+    }
+    return merge(...subQueries);
+  }
+
+  /**
+   * Creates the payload string for a Lucene query
+   */
+  private createLuceneQuery(target: ElasticsearchQuery, options: DataQueryRequest<ElasticsearchQuery>): string {
+    let queryString = this.templateSrv.replace(target.query, options.scopedVars, 'lucene');
+    // @ts-ignore
+    // add global adhoc filters to timeFilter
+    const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+    // Elasticsearch queryString should always be '*' if empty string
+    if (!queryString || queryString === '') {
+      queryString = '*';
+    }
+
+    let queryObj;
+    if (target.isLogsQuery || hasMetricOfType(target, 'logs')) {
+      target.bucketAggs = [defaultBucketAgg()];
+      target.metrics = [];
+      // Setting this for metrics queries that are typed as logs
+      target.isLogsQuery = true;
+      queryObj = this.queryBuilder.getLogsQuery(target, adhocFilters, queryString);
+    } else {
+      if (target.alias) {
+        target.alias = this.templateSrv.replace(target.alias, options.scopedVars, 'lucene');
+      }
+      queryObj = this.queryBuilder.build(target, adhocFilters, queryString);
+    }
+
+    const esQuery = JSON.stringify(queryObj);
+    const searchType = queryObj.size === 0 && this.esVersion < 5 ? 'count' : 'query_then_fetch';
+    const header = this.getQueryHeader(searchType, options.range.from, options.range.to);
+    return header + '\n' + esQuery + '\n';
+  }
+
+  /**
+   * Creates the payload string for a PPL query
+   */
+  private createPPLQuery(target: ElasticsearchQuery, options: DataQueryRequest<ElasticsearchQuery>): string {
+    let queryString = this.templateSrv.replace(target.query, options.scopedVars, 'pipe');
+    let queryObj;
+
+    // @ts-ignore
+    // add global adhoc filters to timeFilter
+    const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+
+    // Elasticsearch PPL queryString should always be 'source=indexName' if empty string
+    if (!queryString) {
+      queryString = `source=\`${this.indexPattern.getPPLIndexPattern()}\``;
+    }
+
+    queryObj = this.queryBuilder.buildPPLQuery(target, adhocFilters, queryString);
+    return JSON.stringify(queryObj);
   }
 
   isMetadataField(fieldName: string) {
@@ -625,6 +741,10 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     }
 
     return '_msearch';
+  }
+
+  getPPLUrl() {
+    return '_opendistro/_ppl';
   }
 
   metricFindQuery(query: string, options?: any): Promise<MetricFindValue[]> {

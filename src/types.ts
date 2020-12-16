@@ -103,3 +103,8 @@ export interface PromQuery extends DataQuery {
   showingGraph?: boolean;
   showingTable?: boolean;
 }
+
+export enum ElasticsearchQueryType {
+  Lucene = 'lucene',
+  PPL = 'PPL',
+}

@@ -1,7 +1,7 @@
 import { DataFrameView, FieldCache, KeyValue, MutableDataFrame } from '@grafana/data';
 import { ElasticResponse } from '../elastic_response';
 import flatten from '../dependencies/flatten';
-import { ElasticsearchQuery } from '../types';
+import { ElasticsearchQuery, ElasticsearchQueryType } from '../types';
 
 describe('ElasticResponse', () => {
   let targets: ElasticsearchQuery[];
@@ -1331,6 +1331,223 @@ describe('ElasticResponse', () => {
       const fieldCache = new FieldCache(result.data[0]);
       const field = fieldCache.getFieldByName('level');
       expect(field?.values.toArray()).toEqual(['debug', 'info']);
+    });
+  });
+
+  describe('PPL log query response', () => {
+    const targets: any = [
+      {
+        refId: 'A',
+        isLogsQuery: true,
+        queryType: ElasticsearchQueryType.PPL,
+        timeField: 'timestamp',
+        format: 'table',
+        query: 'source=sample_data_logs',
+      },
+    ];
+    const response = {
+      datarows: [
+        ['test-data1', 'message1', { coordinates: { lat: 5, lon: 10 } }],
+        ['test-data2', 'message2', { coordinates: { lat: 6, lon: 11 } }],
+        ['test-data3', 'message3', { coordinates: { lat: 7, lon: 12 } }],
+      ],
+      schema: [
+        { name: 'data', type: 'string' },
+        { name: 'message', type: 'string' },
+        { name: 'geo', type: 'struct' },
+      ],
+    };
+    const targetType = ElasticsearchQueryType.PPL;
+    it('should return all data', () => {
+      const result = new ElasticResponse(targets, response, targetType).getLogs();
+      expect(result.data.length).toBe(1);
+      const logResults = result.data[0] as MutableDataFrame;
+      const fields = logResults.fields.map(f => {
+        return {
+          name: f.name,
+          type: f.type,
+        };
+      });
+      expect(fields).toContainEqual({ name: 'data', type: 'string' });
+      expect(fields).toContainEqual({ name: 'message', type: 'string' });
+      expect(fields).toContainEqual({ name: 'geo.coordinates.lat', type: 'string' });
+      expect(fields).toContainEqual({ name: 'geo.coordinates.lon', type: 'string' });
+
+      let rows = new DataFrameView(logResults);
+      expect(rows.length).toBe(3);
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows.get(i);
+        expect(r.data).toEqual(response.datarows[i][0]);
+        expect(r.message).toEqual(response.datarows[i][1]);
+      }
+    });
+  });
+
+  describe('PPL table query response', () => {
+    const targets: any = [
+      {
+        refId: 'A',
+        context: 'explore',
+        interval: '10s',
+        isLogsQuery: false,
+        query: 'source=sample_data | stats count(test) by timestamp',
+        queryType: ElasticsearchQueryType.PPL,
+        timeField: 'timestamp',
+        format: 'table',
+      },
+    ];
+    const response = {
+      datarows: [
+        [5, '2020-11-01 00:39:02.912Z'],
+        [1, '2020-11-01 03:26:21.326Z'],
+        [4, '2020-11-01 03:34:43.399Z'],
+      ],
+      schema: [
+        { name: 'test', type: 'string' },
+        { name: 'timestamp', type: 'timestamp' },
+      ],
+    };
+    const targetType = ElasticsearchQueryType.PPL;
+
+    it('should create dataframes with filterable fields', () => {
+      const result = new ElasticResponse(targets, response, targetType).getTable();
+      for (const field of result.data[0].fields) {
+        expect(field.config.filterable).toBe(true);
+      }
+    });
+    it('should return all data', () => {
+      const result = new ElasticResponse(targets, response, targetType).getTable();
+      expect(result.data.length).toBe(1);
+      const logResults = result.data[0] as MutableDataFrame;
+      const fields = logResults.fields.map(f => {
+        return {
+          name: f.name,
+          type: f.type,
+        };
+      });
+      expect(fields).toEqual([
+        { name: 'test', type: 'string' },
+        { name: 'timestamp', type: 'string' },
+      ]);
+
+      let rows = new DataFrameView(logResults);
+      expect(rows.length).toBe(3);
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows.get(i);
+        expect(r.test).toEqual(response.datarows[i][0]);
+        expect(r.timestamp).toEqual(response.datarows[i][1]);
+      }
+    });
+  });
+
+  describe('PPL time series query response', () => {
+    const targets: any = [
+      {
+        refId: 'A',
+        context: 'explore',
+        interval: '10s',
+        isLogsQuery: true,
+        query: 'source=sample_data | stats count(test) by timestamp',
+        queryType: ElasticsearchQueryType.PPL,
+        timeField: 'timestamp',
+        format: 'time_series',
+      },
+    ];
+    const targetType = ElasticsearchQueryType.PPL;
+
+    const response = {
+      datarows: [
+        [5, '2020-11-01 00:39:02.912Z'],
+        [1, '2020-11-01 03:26:21.326Z'],
+        [4, '2020-11-01 03:34:43.399Z'],
+      ],
+      schema: [
+        { name: 'test', type: 'int' },
+        { name: 'timeName', type: 'timestamp' },
+      ],
+    };
+    it('should return series', () => {
+      const result = new ElasticResponse(targets, response, targetType).getTimeSeries();
+      expect(result.data.length).toBe(1);
+      expect(result.data[0].datapoints.length).toBe(3);
+      expect(result.data[0].datapoints[0][0]).toBe(5);
+      expect(result.data[0].datapoints[0][1]).toBe(1604191142000);
+    });
+
+    const response2 = {
+      datarows: [
+        ['2020-11-01', 5],
+        ['2020-11-02', 1],
+        ['2020-11-03', 4],
+      ],
+      schema: [
+        { name: 'timeName', type: 'date' },
+        { name: 'test', type: 'int' },
+      ],
+    };
+    it('should return series', () => {
+      const result = new ElasticResponse(targets, response2, targetType).getTimeSeries();
+      expect(result.data.length).toBe(1);
+      expect(result.data[0].datapoints.length).toBe(3);
+      expect(result.data[0].datapoints[0][0]).toBe(5);
+      expect(result.data[0].datapoints[0][1]).toBe(1604214000000);
+    });
+
+    const response3 = {
+      datarows: [],
+      schema: [],
+    };
+    it('should return no data', () => {
+      const result = new ElasticResponse(targets, response3, targetType).getTimeSeries();
+      expect(result.data.length).toBe(0);
+    });
+  });
+
+  describe('Invalid PPL time series query response', () => {
+    const targets: any = [
+      {
+        refId: 'A',
+        isLogsQuery: true,
+        query: 'source=sample_data | stats count(test) by data',
+        queryType: ElasticsearchQueryType.PPL,
+        timeField: 'timestamp',
+        format: 'time_series',
+      },
+    ];
+    const targetType = ElasticsearchQueryType.PPL;
+
+    const response1 = {
+      datarows: [
+        [5, '5000'],
+        [1, '1000'],
+        [4, '4000'],
+      ],
+      schema: [
+        { name: 'test', type: 'int' },
+        { name: 'data', type: 'string' },
+      ],
+    };
+    it('should return invalid query error due to no timestamp', () => {
+      expect(() => new ElasticResponse(targets, response1, targetType).getTimeSeries()).toThrowError(
+        'Invalid time series query'
+      );
+    });
+
+    const response2 = {
+      datarows: [
+        ['1', '2020-11-01 00:39:02.912Z'],
+        ['2', '2020-11-01 03:26:21.326Z'],
+        ['3', '2020-11-01 03:34:43.399Z'],
+      ],
+      schema: [
+        { name: 'data', type: 'string' },
+        { name: 'time', type: 'timestamp' },
+      ],
+    };
+    it('should return invalid query error due to no numerical column', () => {
+      expect(() => new ElasticResponse(targets, response2, targetType).getTimeSeries()).toThrowError(
+        'Invalid time series query'
+      );
     });
   });
 });

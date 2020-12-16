@@ -4,7 +4,7 @@ import { mount } from 'enzyme';
 import { ElasticDetails } from './ElasticDetails';
 import { createDefaultConfigOptions } from './mocks';
 import { LegacyForms } from '@grafana/ui';
-const { Select } = LegacyForms;
+const { Select, Switch } = LegacyForms;
 
 describe('ElasticDetails', () => {
   it('should render without error', () => {
@@ -84,6 +84,23 @@ describe('ElasticDetails', () => {
           tc.expectedMaxConcurrentShardRequests
         );
       });
+    });
+  });
+
+  describe('PPL enabled setting', () => {
+    it('should set pplEnabled', () => {
+      const onChangeMock = jest.fn();
+      const options = createDefaultConfigOptions();
+      options.jsonData.pplEnabled = false;
+      const wrapper = mount(<ElasticDetails onChange={onChangeMock} value={options} />);
+
+      const switchEl = wrapper.find({ label: 'PPL enabled' }).find(Switch);
+      const event = {
+        currentTarget: { checked: true },
+      } as React.ChangeEvent<HTMLInputElement>;
+      switchEl.props().onChange(event);
+
+      expect(onChangeMock.mock.calls[0][0].jsonData.pplEnabled).toBe(true);
     });
   });
 });
