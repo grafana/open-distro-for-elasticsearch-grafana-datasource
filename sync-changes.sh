@@ -27,7 +27,10 @@ git reset HEAD src/
 git restore src/
 git checkout sync-upstream
 git apply --3way sync-patch-${BASE_COMMIT}.patch
+
+# Clean up
 git reset HEAD src/
 rm sync-patch-${BASE_COMMIT}.patch
+git branch -D sync-upstream-${BASE_COMMIT}
 
 echo "Patch applied. Now you can review changes and apply it manually if patch failed."
