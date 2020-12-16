@@ -9,7 +9,7 @@ import (
 type Query struct {
 	TimeField  string       `json:"timeField"`
 	RawQuery   string       `json:"query"`
-	QueryType  string		`json:"queryType"`
+	QueryType  string       `json:"queryType"`
 	BucketAggs []*BucketAgg `json:"bucketAggs"`
 	Metrics    []*MetricAgg `json:"metrics"`
 	Alias      string       `json:"alias"`
@@ -104,6 +104,12 @@ func describeMetric(metricType, field string) string {
 	}
 	return text + " " + field
 }
+
+// Query Types
+const (
+	Lucene = "lucene"
+	PPL    = "PPL"
+)
 
 // PPL date time type formats
 const (

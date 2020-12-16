@@ -27,7 +27,8 @@ var newTimeSeriesQuery = func(client es.Client, req *backend.QueryDataRequest, i
 func (e *timeSeriesQuery) execute() (*backend.QueryDataResponse, error) {
 	handlers := make(map[string]queryHandler)
 
-	handlers["lucene"] = newLuceneHandler(e.client, e.tsdbQuery, e.intervalCalculator)
+	handlers[Lucene] = newLuceneHandler(e.client, e.tsdbQuery, e.intervalCalculator)
+	handlers[PPL] = newPPLHandler(e.client, e.tsdbQuery)
 
 	tsQueryParser := newTimeSeriesQueryParser()
 	queries, err := tsQueryParser.parse(e.tsdbQuery)
@@ -71,7 +72,7 @@ func (p *timeSeriesQueryParser) parse(tsdbQuery *backend.QueryDataRequest) ([]*Q
 			return nil, err
 		}
 		rawQuery := model.Get("query").MustString()
-		queryType := model.Get("queryType").MustString("lucene")
+		queryType := model.Get("queryType").MustString(Lucene)
 		bucketAggs, err := p.parseBucketAggs(model)
 		if err != nil {
 			return nil, err

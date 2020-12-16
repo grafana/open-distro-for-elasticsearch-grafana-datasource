@@ -13,7 +13,7 @@ import (
 
 type luceneHandler struct {
 	client             es.Client
-	tsdbQuery          *backend.QueryDataRequest
+	req                *backend.QueryDataRequest
 	intervalCalculator tsdb.IntervalCalculator
 	ms                 *es.MultiSearchRequestBuilder
 	queries            []*Query
@@ -22,7 +22,7 @@ type luceneHandler struct {
 var newLuceneHandler = func(client es.Client, req *backend.QueryDataRequest, intervalCalculator tsdb.IntervalCalculator) *luceneHandler {
 	return &luceneHandler{
 		client:             client,
-		tsdbQuery:          req,
+		req:                req,
 		intervalCalculator: intervalCalculator,
 		ms:                 client.MultiSearch(),
 		queries:            make([]*Query, 0),
@@ -30,8 +30,8 @@ var newLuceneHandler = func(client es.Client, req *backend.QueryDataRequest, int
 }
 
 func (h *luceneHandler) processQuery(q *Query) error {
-	fromMs := h.tsdbQuery.Queries[0].TimeRange.From.UnixNano() / int64(time.Millisecond)
-	toMs := h.tsdbQuery.Queries[0].TimeRange.To.UnixNano() / int64(time.Millisecond)
+	fromMs := h.req.Queries[0].TimeRange.From.UnixNano() / int64(time.Millisecond)
+	toMs := h.req.Queries[0].TimeRange.To.UnixNano() / int64(time.Millisecond)
 	from := fmt.Sprintf("%d", fromMs)
 	to := fmt.Sprintf("%d", toMs)
 
@@ -39,7 +39,7 @@ func (h *luceneHandler) processQuery(q *Query) error {
 	if err != nil {
 		return err
 	}
-	interval := h.intervalCalculator.Calculate(&h.tsdbQuery.Queries[0].TimeRange, minInterval)
+	interval := h.intervalCalculator.Calculate(&h.req.Queries[0].TimeRange, minInterval)
 
 	h.queries = append(h.queries, q)
 
