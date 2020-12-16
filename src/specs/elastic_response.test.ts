@@ -1476,9 +1476,9 @@ describe('ElasticResponse', () => {
 
     const response2 = {
       datarows: [
-        ['2020-11-01', 5],
-        ['2020-11-02', 1],
-        ['2020-11-03', 4],
+        ['2020-11-01 07Z', 5],
+        ['2020-11-02 07Z', 1],
+        ['2020-11-03 07Z', 4],
       ],
       schema: [
         { name: 'timeName', type: 'date' },
