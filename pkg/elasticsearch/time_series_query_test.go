@@ -719,6 +719,36 @@ func TestExecuteTimeSeriesQuery(t *testing.T) {
 				"var1": "_count",
 			})
 		})
+
+		Convey("With Lucene query, should not return PPL response", func() {
+			c := newFakeClient(5)
+			_, err := executeTsdbQuery(c, `{
+				"timeField": "@timestamp",
+				"bucketAggs": [
+					{ "type": "date_histogram", "field": "@timestamp", "id": "2" }
+				],
+				"metrics": [{"type": "avg", "field": "@value", "id": "1" }]
+			}`, from, to, 15*time.Second)
+			So(err, ShouldBeNil)
+			So(c.multisearchRequests, ShouldHaveLength, 1)
+			So(c.pplRequest, ShouldHaveLength, 0)
+		})
+
+		Convey("With PPL query, should return empty PPL response", func() {
+			c := newFakeClient(7)
+			_, err := executeTsdbQuery(c, `{
+				"timeField": "@timestamp",
+				"query": "source = index",
+				"queryType": "PPL"
+			}`, from, to, 15*time.Second)
+			So(err.Error(), ShouldEqual, "response should have 2 fields but found 0")
+
+			So(c.multisearchRequests, ShouldHaveLength, 0)
+			So(c.pplRequest, ShouldHaveLength, 1)
+			
+			req := c.pplRequest[0]
+			So(req.Query, ShouldEqual, "source = index | where `@timestamp` >= timestamp('2018-05-15 10:50:00') and `@timestamp` <= timestamp('2018-05-15 10:55:00')")
+		})
 	})
 }
 
@@ -815,7 +845,7 @@ func TestTimeSeriesQueryParser(t *testing.T) {
 	Convey("Test time series query parser", t, func() {
 		p := newTimeSeriesQueryParser()
 
-		Convey("Should be able to parse query", func() {
+		Convey("Should be able to parse Lucene query", func() {
 			body := `{
 				"timeField": "@timestamp",
 				"query": "@metric:cpu",
@@ -875,6 +905,7 @@ func TestTimeSeriesQueryParser(t *testing.T) {
 
 			So(q.TimeField, ShouldEqual, "@timestamp")
 			So(q.RawQuery, ShouldEqual, "@metric:cpu")
+			So(q.QueryType, ShouldEqual, "lucene")
 			So(q.Alias, ShouldEqual, "{{@hostname}} {{metric}}")
 
 			So(q.Metrics, ShouldHaveLength, 2)
@@ -907,6 +938,43 @@ func TestTimeSeriesQueryParser(t *testing.T) {
 			So(q.BucketAggs[1].Settings.Get("interval").MustString(), ShouldEqual, "5m")
 			So(q.BucketAggs[1].Settings.Get("min_doc_count").MustInt64(), ShouldEqual, 0)
 			So(q.BucketAggs[1].Settings.Get("trimEdges").MustInt64(), ShouldEqual, 0)
+		})
+
+		Convey("Should default queryType to Lucene", func() {
+			body := `{
+				"timeField": "@timestamp",
+				"query": "*"
+			}`
+			tsdbQuery, err := newTsdbQuery(body)
+			So(err, ShouldBeNil)
+			queries, err := p.parse(tsdbQuery)
+			So(err, ShouldBeNil)
+			So(queries, ShouldHaveLength, 1)
+
+			q := queries[0]
+
+			So(q.TimeField, ShouldEqual, "@timestamp")
+			So(q.RawQuery, ShouldEqual, "*")
+			So(q.QueryType, ShouldEqual, "lucene")
+		})
+
+		Convey("Should be able to parse PPL query", func() {
+			body := `{
+				"timeField": "@timestamp",
+				"query": "source=index",
+				"queryType": "PPL"
+			}`
+			tsdbQuery, err := newTsdbQuery(body)
+			So(err, ShouldBeNil)
+			queries, err := p.parse(tsdbQuery)
+			So(err, ShouldBeNil)
+			So(queries, ShouldHaveLength, 1)
+
+			q := queries[0]
+
+			So(q.TimeField, ShouldEqual, "@timestamp")
+			So(q.RawQuery, ShouldEqual, "source=index")
+			So(q.QueryType, ShouldEqual, "PPL")
 		})
 	})
 }
