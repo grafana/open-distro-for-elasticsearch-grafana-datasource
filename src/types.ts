@@ -7,6 +7,7 @@ import {
   MetricAggregation,
   MetricAggregationType,
 } from './components/QueryEditor/MetricAggregationsEditor/aggregations';
+import { PPLFormatType } from './components/QueryEditor/PPLFormatEditor/formats';
 
 export interface ElasticsearchOptions extends DataSourceJsonData {
   database: string;
@@ -50,6 +51,14 @@ export type BucketsConfiguration = {
   [P in BucketAggregationType]: BucketConfiguration<P>;
 };
 
+export type QueryTypeConfiguration = {
+  [P in ElasticsearchQueryType]: { label: string };
+};
+
+export type FormatConfiguration = {
+  [P in PPLFormatType]: { label: string };
+};
+
 export interface ElasticsearchAggregation {
   id: string;
   type: MetricAggregationType | BucketAggregationType;
@@ -66,7 +75,7 @@ export interface ElasticsearchQuery extends DataQuery {
   metrics?: MetricAggregation[];
   timeField?: string;
   queryType?: ElasticsearchQueryType;
-  format?: string;
+  format?: PPLFormatType;
 }
 
 export type DataLinkConfig = {
@@ -74,6 +83,11 @@ export type DataLinkConfig = {
   url: string;
   datasourceUid?: string;
 };
+
+export enum ElasticsearchQueryType {
+  Lucene = 'lucene',
+  PPL = 'PPL',
+}
 
 export interface PromQuery extends DataQuery {
   expr: string;

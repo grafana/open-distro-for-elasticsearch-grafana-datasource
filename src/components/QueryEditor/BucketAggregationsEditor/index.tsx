@@ -23,7 +23,8 @@ export const BucketAggregationsEditor: FunctionComponent<Props> = ({ nextId }) =
         <QueryEditorRow
           key={bucketAgg.id}
           label={index === 0 ? 'Group By' : 'Then By'}
-          onRemoveClick={totalBucketAggs > 1 && (() => dispatch(removeBucketAggregation(bucketAgg.id)))}
+          onRemoveClick={() => dispatch(removeBucketAggregation(bucketAgg.id))}
+          disableRemove={!(totalBucketAggs > 1)}
         >
           <BucketAggregationEditor value={bucketAgg} />
 

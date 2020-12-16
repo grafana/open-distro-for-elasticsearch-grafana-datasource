@@ -98,6 +98,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       this.logLevelField = undefined;
     }
     this.languageProvider = new LanguageProvider(this);
+    this.pplEnabled = settingsData.pplEnabled ?? true;
   }
 
   private request(method: string, url: string, data?: undefined) {
@@ -836,6 +837,10 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     }
 
     return false;
+  }
+
+  getSupportedQueryTypes(): ElasticsearchQueryType[] {
+    return [ElasticsearchQueryType.Lucene, ...(this.pplEnabled ? [ElasticsearchQueryType.PPL] : [])];
   }
 }
 
