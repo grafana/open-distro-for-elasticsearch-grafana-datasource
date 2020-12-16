@@ -60,4 +60,27 @@ describe('IndexPattern', () => {
       });
     });
   });
+
+  describe('getPPLIndexPattern', () => {
+    describe('no interval', () => {
+      test('should return correct index', () => {
+        const pattern = new IndexPattern('my-metrics');
+        expect(pattern.getPPLIndexPattern()).toEqual('my-metrics');
+      });
+    });
+
+    describe('daily interval pattern prefix', () => {
+      test('should return correct index pattern', () => {
+        const pattern = new IndexPattern('YYYY.MM.DD[-asd]', 'Daily');
+        expect(pattern.getPPLIndexPattern()).toEqual('*-asd');
+      });
+    });
+
+    describe('daily interval pattern suffix', () => {
+      test('should return correct index with time pattern suffix', () => {
+        const pattern = new IndexPattern('[asd-]YYYY.MM.DD', 'Daily');
+        expect(pattern.getPPLIndexPattern()).toEqual('asd-*');
+      });
+    });
+  });
 });

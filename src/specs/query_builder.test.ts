@@ -1,5 +1,5 @@
 import { ElasticQueryBuilder } from '../query_builder';
-import { ElasticsearchQuery } from '../types';
+import { ElasticsearchQuery, ElasticsearchQueryType } from '../types';
 
 describe('ElasticQueryBuilder', () => {
   const builder = new ElasticQueryBuilder({ timeField: '@timestamp', esVersion: 2 });
@@ -624,6 +624,82 @@ describe('ElasticQueryBuilder', () => {
           expect(query.query.bool.filter[2].range['key4'].gt).toBe('value4');
           expect(query.query.bool.filter[3].regexp['key5']).toBe('value5');
           expect(query.query.bool.filter[4].bool.must_not.regexp['key6']).toBe('value6');
+        });
+      });
+
+      describe('build Logs PPL query', () => {
+        const target = {
+          queryType: ElasticsearchQueryType.PPL,
+          format: 'logs',
+          isLogsQuery: false,
+        };
+
+        it('should return default query and set isLogsQuery to true', () => {
+          const query = builder.buildPPLQuery(target, null, 'source=test');
+
+          const expectedQuery = {
+            query: "source=test | where $timestamp >= timestamp('$timeFrom') and $timestamp <= timestamp('$timeTo')",
+          };
+          expect(query).toEqual(expectedQuery);
+          expect(target.isLogsQuery).toEqual(true);
+        });
+
+        it('should return the query string', () => {
+          const query = builder.buildPPLQuery(target, null, 'source=test | where age > 18 | fields firstname');
+
+          const expectedQuery = {
+            query:
+              "source=test | where $timestamp >= timestamp('$timeFrom') and $timestamp <= timestamp('$timeTo') | where age > 18 | fields firstname",
+          };
+          expect(query).toEqual(expectedQuery);
+        });
+      });
+
+      describe('build PPL time series query', () => {
+        const target = {
+          queryType: ElasticsearchQueryType.PPL,
+          format: 'time_series',
+          isLogsQuery: false,
+        };
+
+        it('should return default query', () => {
+          const query = builder.buildPPLQuery(target, null, 'source=test');
+
+          const expectedQuery = {
+            query: "source=test | where $timestamp >= timestamp('$timeFrom') and $timestamp <= timestamp('$timeTo')",
+          };
+          expect(query).toEqual(expectedQuery);
+          expect(target.isLogsQuery).toEqual(false);
+        });
+      });
+
+      describe('build PPL query with ad hoc filters', () => {
+        it('should return the query with adhoc filters and time range filter', () => {
+          const adhocFilters = [
+            { key: 'key1', operator: '=', value: 'value1' },
+            { key: 'key2', operator: '<', value: 50 },
+          ];
+          const query = builder.buildPPLQuery({}, adhocFilters, 'source=test');
+
+          const expectedQuery = {
+            query:
+              "source=test | where $timestamp >= timestamp('$timeFrom') and $timestamp <= timestamp('$timeTo') | where `key1` = 'value1' and `key2` < 50",
+          };
+          expect(query).toEqual(expectedQuery);
+        });
+
+        it('should return the query with datetime adhoc filter and time range filter', () => {
+          const adhocFilters = [
+            { key: 'key1', operator: '=', value: 'value1' },
+            { key: 'timestamp', operator: '=', value: '2020-11-22 16:40:43' },
+          ];
+          const query = builder.buildPPLQuery({}, adhocFilters, 'source=test | fields data1');
+
+          const expectedQuery = {
+            query:
+              "source=test | where $timestamp >= timestamp('$timeFrom') and $timestamp <= timestamp('$timeTo') | fields data1 | where `key1` = 'value1' and `timestamp` = timestamp('2020-11-22 16:40:43.000000')",
+          };
+          expect(query).toEqual(expectedQuery);
         });
       });
     });

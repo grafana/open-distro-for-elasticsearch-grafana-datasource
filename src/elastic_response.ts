@@ -3,6 +3,7 @@ import flatten from './dependencies/flatten';
 import * as queryDef from './query_def';
 import TableModel from './dependencies/table_model';
 import {
+  dateTime,
   DataQueryResponse,
   DataFrame,
   toDataFrame,
@@ -10,7 +11,7 @@ import {
   MutableDataFrame,
   PreferredVisualisationType,
 } from '@grafana/data';
-import { ElasticsearchAggregation, ElasticsearchQuery } from './types';
+import { ElasticsearchAggregation, ElasticsearchQuery, ElasticsearchQueryType } from './types';
 import {
   ExtendedStatMetaType,
   isMetricAggregationWithField,
@@ -19,9 +20,14 @@ import { describeMetric } from './utils';
 import { metricAggregationConfig } from './components/QueryEditor/MetricAggregationsEditor/utils';
 
 export class ElasticResponse {
-  constructor(private targets: ElasticsearchQuery[], private response: any) {
+  constructor(
+    private targets: ElasticsearchQuery[],
+    private response: any,
+    private targetType: ElasticsearchQueryType = ElasticsearchQueryType.Lucene
+  ) {
     this.targets = targets;
     this.response = response;
+    this.targetType = targetType;
   }
 
   processMetrics(esAgg: any, target: ElasticsearchQuery, seriesList: any, props: any) {
@@ -420,15 +426,35 @@ export class ElasticResponse {
     return result;
   }
 
+  getInvalidPPLQuery(response: any) {
+    const result: any = {};
+    result.message = 'Invalid time series query';
+
+    if (response.$$config) {
+      result.config = response.$$config;
+    }
+
+    return result;
+  }
+
   getTimeSeries() {
-    if (this.targets.some(target => target.metrics?.some(metric => metric.type === 'raw_data'))) {
+    if (this.targetType === ElasticsearchQueryType.PPL) {
+      return this.processPPLResponseToSeries();
+    } else if (this.targets.some(target => target.metrics?.some(metric => metric.type === 'raw_data'))) {
       return this.processResponseToDataFrames(false);
     }
     return this.processResponseToSeries();
   }
 
   getLogs(logMessageField?: string, logLevelField?: string): DataQueryResponse {
+    if (this.targetType === ElasticsearchQueryType.PPL) {
+      return this.processPPLResponseToDataFrames(true, logMessageField, logLevelField);
+    }
     return this.processResponseToDataFrames(true, logMessageField, logLevelField);
+  }
+
+  getTable() {
+    return this.processPPLResponseToDataFrames(false);
   }
 
   processResponseToDataFrames(
@@ -451,6 +477,7 @@ export class ElasticResponse {
             propNames,
             this.targets[0].timeField!,
             isLogsRequest,
+            this.targetType,
             logMessageField,
             logLevelField
           );
@@ -504,7 +531,7 @@ export class ElasticResponse {
       }
     }
 
-    return { data: dataFrame };
+    return { data: dataFrame, key: this.targets[0]?.refId };
   }
 
   processResponseToSeries = () => {
@@ -543,8 +570,83 @@ export class ElasticResponse {
       }
     }
 
-    return { data: seriesList };
+    return { data: seriesList, key: this.targets[0]?.refId };
   };
+
+  processPPLResponseToSeries = () => {
+    const target = this.targets[0];
+    const response = this.response;
+    const seriesList = [];
+
+    if (response.datarows.length > 0) {
+      // Handle error from Elasticsearch
+      if (response.error) {
+        throw this.getErrorFromElasticResponse(this.response, response.error);
+      }
+      // Get the data points and target that will be inputted to newSeries
+      const { datapoints, targetVal, invalidTS } = getPPLDatapoints(response);
+
+      // We throw an error if the inputted query is not valid
+      if (invalidTS) {
+        throw this.getInvalidPPLQuery(this.response);
+      }
+
+      const newSeries = {
+        datapoints,
+        props: response.schema,
+        refId: target.refId,
+        target: targetVal,
+      };
+      seriesList.push(newSeries);
+    }
+    return { data: seriesList, key: this.targets[0]?.refId };
+  };
+
+  processPPLResponseToDataFrames(
+    isLogsRequest: boolean,
+    logMessageField?: string,
+    logLevelField?: string
+  ): DataQueryResponse {
+    if (this.response.error) {
+      throw this.getErrorFromElasticResponse(this.response, this.response.error);
+    }
+
+    const dataFrame: DataFrame[] = [];
+
+    //map the schema into an array of string containing its name
+    const schema = this.response.schema.map((a: { name: any }) => a.name);
+    //combine the schema key and response value
+    const response = _.map(this.response.datarows, arr => _.zipObject(schema, arr));
+    //flatten the response
+    const { flattenSchema, docs } = flattenResponses(response);
+
+    if (response.length > 0) {
+      let series = createEmptyDataFrame(
+        flattenSchema,
+        this.targets[0].timeField!,
+        isLogsRequest,
+        this.targetType,
+        logMessageField,
+        logLevelField
+      );
+      // Add a row for each document
+      for (const doc of docs) {
+        if (logLevelField) {
+          // Remap level field based on the datasource config. This field is then used in explore to figure out the
+          // log level. We may rewrite some actual data in the level field if they are different.
+          doc['level'] = doc[logLevelField];
+        }
+        series.add(doc);
+      }
+      if (isLogsRequest) {
+        series = addPreferredVisualisationType(series, 'logs');
+      }
+      const target = this.targets[0];
+      series.refId = target.refId;
+      dataFrame.push(series);
+    }
+    return { data: dataFrame, key: this.targets[0]?.refId };
+  }
 }
 
 type Doc = {
@@ -590,6 +692,67 @@ const flattenHits = (hits: Doc[]): { docs: Array<Record<string, any>>; propNames
 };
 
 /**
+ * Flatten the response which can be nested. This flattens it so that it is one level deep and the keys are:
+ * `level1Name.level2Name...`. Also returns list of all schemas from all the response
+ * @param responses
+ */
+const flattenResponses = (responses: any): { docs: Array<Record<string, any>>; flattenSchema: string[] } => {
+  const docs: any[] = [];
+  // We keep a list of all schemas so that we can create all the fields in the dataFrame, this can lead
+  // to wide sparse dataframes in case the scheme is different per document.
+  let flattenSchema: string[] = [];
+
+  for (const response of responses) {
+    const doc = flatten(response);
+
+    for (const schema of Object.keys(doc)) {
+      if (flattenSchema.indexOf(schema) === -1) {
+        flattenSchema.push(schema);
+      }
+    }
+    docs.push(doc);
+  }
+  return { docs, flattenSchema };
+};
+
+/**
+ * Returns the datapoints and target needed for parsing PPL time series response.
+ * Also checks to ensure the query is a valid time series query
+ * @param responses
+ */
+const getPPLDatapoints = (response: any): { datapoints: any; targetVal: any; invalidTS: boolean } => {
+  let invalidTS = false;
+
+  // We check if a valid date type is contained in the response
+  const timeFieldIndex = _.findIndex(
+    response.schema,
+    (field: { type: string }) => field.type === 'timestamp' || field.type === 'datetime' || field.type === 'date'
+  );
+
+  const valueIndex = timeFieldIndex === 0 ? 1 : 0;
+
+  //time series response should include a value field and timestamp
+  if (
+    timeFieldIndex === -1 ||
+    response.datarows[0].length !== 2 ||
+    typeof response.datarows[0][valueIndex] !== 'number'
+  ) {
+    invalidTS = true;
+  }
+
+  const datapoints = _.map(response.datarows, datarow => {
+    const newDatarow = _.clone(datarow);
+    const [timestamp] = newDatarow.splice(timeFieldIndex, 1);
+    newDatarow.push(dateTime(timestamp).unix() * 1000);
+    return newDatarow;
+  });
+
+  const targetVal = response.schema[valueIndex]?.name;
+
+  return { datapoints, targetVal, invalidTS };
+};
+
+/**
  * Create empty dataframe but with created fields. Fields are based from propNames (should be from the response) and
  * also from configuration specified fields for message, time, and level.
  * @param propNames
@@ -601,18 +764,22 @@ const createEmptyDataFrame = (
   propNames: string[],
   timeField: string,
   isLogsRequest: boolean,
+  targetType: ElasticsearchQueryType,
   logMessageField?: string,
   logLevelField?: string
 ): MutableDataFrame => {
   const series = new MutableDataFrame({ fields: [] });
 
-  series.addField({
-    config: {
-      filterable: true,
-    },
-    name: timeField,
-    type: FieldType.time,
-  });
+  //PPL table response should add time field only when it is part of the query response
+  if (targetType === ElasticsearchQueryType.Lucene || isLogsRequest) {
+    series.addField({
+      config: {
+        filterable: true,
+      },
+      name: timeField,
+      type: FieldType.time,
+    });
+  }
 
   if (logMessageField) {
     series.addField({
