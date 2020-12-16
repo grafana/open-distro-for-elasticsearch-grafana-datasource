@@ -55,7 +55,3 @@ export function isPipelineAgg(metricType: MetricAggregationType) {
 export function isPipelineAggWithMultipleBucketPaths(metricType: MetricAggregationType) {
   return !!metricAggregationConfig[metricType].supportsMultipleBucketPaths;
 }
-
-export function defaultPPLFormat() {
-  return 'table';
-}
