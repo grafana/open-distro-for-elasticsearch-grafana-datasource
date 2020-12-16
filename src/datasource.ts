@@ -468,11 +468,11 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
     const subQueries: Array<Observable<DataQueryResponse>> = [];
 
-    if (!luceneTargets.length) {
+    if (luceneTargets.length) {
       const luceneResponses = this.executeLuceneQueries(luceneTargets, options);
       subQueries.push(luceneResponses);
     }
-    if (!pplTargets.length) {
+    if (pplTargets.length) {
       const pplResponses = this.executePPLQueries(pplTargets, options);
       subQueries.push(pplResponses);
     }
