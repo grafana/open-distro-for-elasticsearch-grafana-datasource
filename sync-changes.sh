@@ -12,8 +12,8 @@ node ./scripts/sync-frontend.js -r ${BASE_COMMIT}
 git add .
 git commit -m "Sync changes with commit ${BASE_COMMIT}"
 
-echo "Rebasing changes"
-git rebase sync-upstream-${BASE_COMMIT} sync-upstream
+# echo "Rebasing changes"
+# git rebase sync-upstream-${BASE_COMMIT} sync-upstream
 
 echo "Syncing changes with master"
 node ./scripts/sync-frontend.js
