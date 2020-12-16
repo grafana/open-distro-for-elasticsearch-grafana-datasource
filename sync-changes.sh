@@ -13,7 +13,7 @@ git add .
 git commit -m "Sync changes with commit ${BASE_COMMIT}"
 
 echo "Merging changes"
-git merge sync-upstream
+git rebase sync-upstream-${BASE_COMMIT} sync-upstream
 
 echo "Syncing changes with master"
 node ./scripts/sync-frontend.js
