@@ -44,6 +44,7 @@ async function main() {
   }
 
   if (ref === 'master' && masterCommit) {
+    console.log('Writing master commit into lockfile');
     fs.writeFileSync(COMMIT_LOCK_FILE, masterCommit);
   }
 
