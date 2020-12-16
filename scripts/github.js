@@ -17,8 +17,11 @@ function apiRequest(endpoint) {
   return request(options);
 }
 
-async function getRepoContent(owner, repo, path) {
-  const endpoint = `/repos/${owner}/${repo}/contents/${path || ''}`;
+async function getRepoContent(owner, repo, path, ref) {
+  let endpoint = `/repos/${owner}/${repo}/contents/${path || ''}`;
+  if (ref) {
+    endpoint = `${endpoint}?ref=${ref}`;
+  }
   const content = await apiRequest(endpoint);
   return content;
 }

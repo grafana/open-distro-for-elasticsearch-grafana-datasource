@@ -6,19 +6,25 @@ const github = require('./github');
 
 const GH_OWNER = 'grafana';
 const GH_REPO = 'grafana';
-const ES_DIR_PATH = 'public/app/plugins/datasource/elasticsearch/';
+const ES_DIR_PATH = 'public/app/plugins/datasource/elasticsearch';
 const FRONTEND_DST_PATH = 'src';
 
 async function main() {
+  let ref = 'master';
   if (process.argv.length > 2) {
     if (process.argv[2] === '-h' || process.argv[2] === '--help') {
       printUsage();
       process.exit(0);
+    } else if (process.argv[2] === '-r' || process.argv[2] === '--ref') {
+      ref = process.argv[3];
+    } else {
+      ref = process.argv[2];
     }
   }
 
-  console.log('Getting list of files to sync');
-  const content = await listContent(ES_DIR_PATH);
+  console.log(`Getting list of files to sync (ref ${ref})`);
+  const content = await listContent(ES_DIR_PATH, ref);
+  // console.log(content);
 
   console.log('Downloading files');
   for (const file of content) {
@@ -33,14 +39,14 @@ async function main() {
   process.exit(0);
 }
 
-async function listContent(path) {
-  const rawContent = await github.getRepoContent(GH_OWNER, GH_REPO, path);
+async function listContent(path, ref) {
+  const rawContent = await github.getRepoContent(GH_OWNER, GH_REPO, path, ref);
   let content = [];
   for (const item of rawContent) {
     const { name, type, path: itemPath, download_url } = item;
     const relativePath = path.replace(ES_DIR_PATH, '');
     if (type === 'dir') {
-      const dirContent = await listContent(itemPath);
+      const dirContent = await listContent(itemPath, ref);
       content = content.concat(dirContent);
     } else {
       content.push({ name, relativePath, download_url });
@@ -76,6 +82,7 @@ Usage:
     ./sync-frontend.js [options]
 
 Options:
+      -r, --ref <ref>: \t\t sync with particular commit or branch
       -v, --verbose: \t\t verbose output
   `;
   console.log(usage);
