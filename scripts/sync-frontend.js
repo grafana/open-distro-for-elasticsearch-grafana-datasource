@@ -25,7 +25,7 @@ async function main() {
   }
 
   if (ref === 'master') {
-    const masterCommit = await github.getLastBranchCommit(GH_OWNER, GH_REPO, 'master');
+    masterCommit = await github.getLastBranchCommit(GH_OWNER, GH_REPO, 'master');
     console.log('Master branch is on', masterCommit);
   }
 
