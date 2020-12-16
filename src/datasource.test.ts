@@ -202,7 +202,7 @@ describe('ElasticDatasource', function(this: any) {
       } as DataQueryRequest<ElasticsearchQuery>;
 
       const queryBuilderSpy = jest.spyOn(ctx.ds.queryBuilder, 'getLogsQuery');
-      const response = await ctx.ds.query(query);
+      const response = await ctx.ds.query(query).toPromise();
       return { queryBuilderSpy, response };
     }
 
