@@ -150,6 +150,10 @@ func (h *luceneHandler) processQuery(q *Query) error {
 }
 
 func (h *luceneHandler) executeQueries() (*backend.QueryDataResponse, error) {
+	if len(h.queries) == 0 {
+		return nil, nil
+	}
+
 	req, err := h.ms.Build()
 	if err != nil {
 		return nil, err

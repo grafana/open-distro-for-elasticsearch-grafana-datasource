@@ -48,7 +48,9 @@ func (e *timeSeriesQuery) execute() (*backend.QueryDataResponse, error) {
 		if err != nil {
 			return nil, err
 		}
-		responses = append(responses, response)
+		if response != nil {
+			responses = append(responses, response)
+		}
 	}
 
 	return mergeResponses(responses...), nil
