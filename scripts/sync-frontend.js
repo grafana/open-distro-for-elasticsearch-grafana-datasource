@@ -8,9 +8,11 @@ const GH_OWNER = 'grafana';
 const GH_REPO = 'grafana';
 const ES_DIR_PATH = 'public/app/plugins/datasource/elasticsearch';
 const FRONTEND_DST_PATH = 'src';
+const COMMIT_LOCK_FILE = '.upstream.lock';
 
 async function main() {
   let ref = 'master';
+  let masterCommit;
   if (process.argv.length > 2) {
     if (process.argv[2] === '-h' || process.argv[2] === '--help') {
       printUsage();
@@ -20,6 +22,11 @@ async function main() {
     } else {
       ref = process.argv[2];
     }
+  }
+
+  if (ref === 'master') {
+    const masterCommit = await github.getLastBranchCommit(GH_OWNER, GH_REPO, 'master');
+    console.log('Master branch is on', masterCommit);
   }
 
   console.log(`Getting list of files to sync (ref ${ref})`);
@@ -34,6 +41,10 @@ async function main() {
     }
     const dest = `${destDir}${file.name}`;
     await downloadFile(file.download_url, dest);
+  }
+
+  if (ref === 'master' && masterCommit) {
+    fs.writeFileSync(COMMIT_LOCK_FILE, masterCommit);
   }
 
   process.exit(0);

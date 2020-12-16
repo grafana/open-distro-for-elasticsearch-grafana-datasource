@@ -26,7 +26,15 @@ async function getRepoContent(owner, repo, path, ref) {
   return content;
 }
 
+async function getLastBranchCommit(owner, repo, branch) {
+  const endpoint = `/repos/${owner}/${repo}/branches/${branch}`;
+  const b = await apiRequest(endpoint);
+  const commit = b.commit.sha;
+  return commit;
+}
+
 module.exports = {
   request: apiRequest,
   getRepoContent,
+  getLastBranchCommit,
 };
