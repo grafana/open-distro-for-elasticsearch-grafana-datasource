@@ -70,10 +70,6 @@ describe('ElasticDatasource', function(this: any) {
   const ctx = {} as TestContext;
 
   function createDatasource(instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>) {
-    createDatasourceWithTime(instanceSettings);
-  }
-
-  function createDatasourceWithTime(instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>) {
     instanceSettings.jsonData = instanceSettings.jsonData || ({} as ElasticsearchOptions);
     ctx.ds = new ElasticDatasource(instanceSettings, templateSrv as TemplateSrv);
   }
@@ -82,8 +78,11 @@ describe('ElasticDatasource', function(this: any) {
     beforeEach(() => {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: '[asd-]YYYY.MM.DD',
-        jsonData: { interval: 'Daily', esVersion: 2 } as ElasticsearchOptions,
+        jsonData: {
+          database: '[asd-]YYYY.MM.DD',
+          interval: 'Daily',
+          esVersion: 2,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
     });
 
@@ -107,8 +106,11 @@ describe('ElasticDatasource', function(this: any) {
     beforeEach(async () => {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: '[asd-]YYYY.MM.DD',
-        jsonData: { interval: 'Daily', esVersion: 2 } as ElasticsearchOptions,
+        jsonData: {
+          database: '[asd-]YYYY.MM.DD',
+          interval: 'Daily',
+          esVersion: 2,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
 
       datasourceRequestMock.mockImplementation(options => {
@@ -148,7 +150,7 @@ describe('ElasticDatasource', function(this: any) {
         ],
       };
 
-      result = await ctx.ds.query(query);
+      result = await ctx.ds.query(query).toPromise();
 
       parts = requestOptions.data.split('\n');
       header = JSON.parse(parts[0]);
@@ -176,8 +178,8 @@ describe('ElasticDatasource', function(this: any) {
     async function setupDataSource(jsonData?: Partial<ElasticsearchOptions>) {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: 'mock-index',
         jsonData: {
+          database: 'mock-index',
           interval: 'Daily',
           esVersion: 2,
           timeField: '@timestamp',
@@ -237,8 +239,10 @@ describe('ElasticDatasource', function(this: any) {
     beforeEach(() => {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: 'test',
-        jsonData: { esVersion: 2 } as ElasticsearchOptions,
+        jsonData: {
+          database: 'test',
+          esVersion: 2,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
 
       datasourceRequestMock.mockImplementation(options => {
@@ -289,8 +293,11 @@ describe('ElasticDatasource', function(this: any) {
 
     createDatasource({
       url: ELASTICSEARCH_MOCK_URL,
-      database: '[asd-]YYYY.MM.DD',
-      jsonData: { interval: 'Daily', esVersion: 7 } as ElasticsearchOptions,
+      jsonData: {
+        database: '[asd-]YYYY.MM.DD',
+        interval: 'Daily',
+        esVersion: 7,
+      } as ElasticsearchOptions,
     } as DataSourceInstanceSettings<ElasticsearchOptions>);
 
     it('should process it properly', async () => {
@@ -354,8 +361,10 @@ describe('ElasticDatasource', function(this: any) {
     beforeEach(() => {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: 'metricbeat',
-        jsonData: { esVersion: 50 } as ElasticsearchOptions,
+        jsonData: {
+          database: 'metricbeat',
+          esVersion: 50,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
 
       datasourceRequestMock.mockImplementation(options => {
@@ -483,10 +492,13 @@ describe('ElasticDatasource', function(this: any) {
     };
 
     beforeEach(() => {
-      createDatasourceWithTime({
+      createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: '[asd-]YYYY.MM.DD',
-        jsonData: { interval: 'Daily', esVersion: 50 } as ElasticsearchOptions,
+        jsonData: {
+          database: '[asd-]YYYY.MM.DD',
+          interval: 'Daily',
+          esVersion: 50,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
     });
 
@@ -499,6 +511,8 @@ describe('ElasticDatasource', function(this: any) {
         .subtract(3, 'day')
         .format('YYYY.MM.DD');
 
+      const twoWeekRange = createTimeRange(toUtc().subtract(2, 'week'), toUtc());
+
       datasourceRequestMock.mockImplementation(options => {
         if (options.url === `${ELASTICSEARCH_MOCK_URL}/asd-${twoDaysBefore}/_mapping`) {
           return Promise.resolve(basicResponse);
@@ -508,7 +522,7 @@ describe('ElasticDatasource', function(this: any) {
         return Promise.reject({ status: 404 });
       });
 
-      const fieldObjects = await ctx.ds.getFields();
+      const fieldObjects = await ctx.ds.getFields(undefined, twoWeekRange);
 
       const fields = _.map(fieldObjects, 'text');
       expect(fields).toEqual(['@timestamp', 'beat.hostname']);
@@ -519,6 +533,8 @@ describe('ElasticDatasource', function(this: any) {
         .subtract(2, 'day')
         .format('YYYY.MM.DD');
 
+      const twoWeekRange = createTimeRange(toUtc().subtract(2, 'week'), toUtc());
+
       datasourceRequestMock.mockImplementation(options => {
         if (options.url === `${ELASTICSEARCH_MOCK_URL}/asd-${twoDaysBefore}/_mapping`) {
           return Promise.resolve(basicResponse);
@@ -528,7 +544,7 @@ describe('ElasticDatasource', function(this: any) {
 
       expect.assertions(2);
       try {
-        await ctx.ds.getFields();
+        await ctx.ds.getFields(undefined, twoWeekRange);
       } catch (e) {
         expect(e).toStrictEqual({ status: 500 });
         expect(datasourceRequestMock).toBeCalledTimes(1);
@@ -536,13 +552,14 @@ describe('ElasticDatasource', function(this: any) {
     });
 
     it('should not retry more than 7 indices', async () => {
+      const twoWeekRange = createTimeRange(toUtc().subtract(2, 'week'), toUtc());
       datasourceRequestMock.mockImplementation(() => {
         return Promise.reject({ status: 404 });
       });
 
       expect.assertions(2);
       try {
-        await ctx.ds.getFields();
+        await ctx.ds.getFields(undefined, twoWeekRange);
       } catch (e) {
         expect(e).toStrictEqual({ status: 404 });
         expect(datasourceRequestMock).toBeCalledTimes(7);
@@ -554,8 +571,10 @@ describe('ElasticDatasource', function(this: any) {
     beforeEach(() => {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: 'genuine.es7._mapping.response',
-        jsonData: { esVersion: 70 } as ElasticsearchOptions,
+        jsonData: {
+          database: 'genuine.es7._mapping.response',
+          esVersion: 70,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
 
       datasourceRequestMock.mockImplementation(options => {
@@ -699,8 +718,10 @@ describe('ElasticDatasource', function(this: any) {
     beforeEach(() => {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: 'test',
-        jsonData: { esVersion: 5 } as ElasticsearchOptions,
+        jsonData: {
+          database: 'test',
+          esVersion: 5,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
 
       datasourceRequestMock.mockImplementation(options => {
@@ -743,8 +764,10 @@ describe('ElasticDatasource', function(this: any) {
     beforeEach(() => {
       createDatasource({
         url: ELASTICSEARCH_MOCK_URL,
-        database: 'test',
-        jsonData: { esVersion: 5 } as ElasticsearchOptions,
+        jsonData: {
+          database: 'test',
+          esVersion: 5,
+        } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>);
 
       datasourceRequestMock.mockImplementation(options => {
@@ -807,8 +830,8 @@ describe('ElasticDatasource', function(this: any) {
       const dataSource = new ElasticDatasource(
         {
           url: ELASTICSEARCH_MOCK_URL,
-          database: '[asd-]YYYY.MM.DD',
           jsonData: {
+            database: '[asd-]YYYY.MM.DD',
             interval: 'Daily',
             esVersion: 2,
             timeField: '@time',
@@ -860,7 +883,7 @@ describe('ElasticDatasource', function(this: any) {
       const ds = new ElasticDatasource(instanceSettings, templateSrv as TemplateSrv);
       const supportedTypes = ds.getSupportedQueryTypes();
       expect(supportedTypes.length).toBe(1);
-      expect(supportedTypes).toBe([ElasticsearchQueryType.Lucene]);
+      expect(supportedTypes).toEqual([ElasticsearchQueryType.Lucene]);
     });
 
     it('should return Lucene and PPL when PPL is set', () => {
