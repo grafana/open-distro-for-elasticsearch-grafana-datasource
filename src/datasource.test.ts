@@ -20,11 +20,14 @@ import { ElasticsearchOptions, ElasticsearchQuery, ElasticsearchQueryType } from
 import { Filters } from './components/QueryEditor/BucketAggregationsEditor/aggregations';
 
 const ELASTICSEARCH_MOCK_URL = 'http://elasticsearch.local';
-const backendSrv = getBackendSrv();
+
+const backendSrv = {
+  datasourceRequest: jest.fn(),
+};
 
 jest.mock('@grafana/runtime', () => ({
   ...((jest.requireActual('@grafana/runtime') as unknown) as object),
-  getBackendSrv: () => getBackendSrv(),
+  getBackendSrv: () => backendSrv,
   getDataSourceSrv: () => {
     return {
       getInstanceSettings: () => {
