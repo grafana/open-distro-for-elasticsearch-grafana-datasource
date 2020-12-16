@@ -12,5 +12,6 @@ export function createDefaultConfigOptions(): DataSourceSettings<ElasticsearchOp
     logMessageField: 'test.message',
     logLevelField: 'test.level',
     database: '',
+    pplEnabled: false,
   });
 }
