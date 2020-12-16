@@ -63,7 +63,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   logLevelField?: string;
   dataLinks: DataLinkConfig[];
   languageProvider: LanguageProvider;
-  pplSupportEnabled?: boolean;
+  pplEnabled?: boolean;
 
   constructor(
     instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>,
@@ -467,12 +467,13 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     }
 
     const subQueries: Array<Observable<DataQueryResponse>> = [];
-    const luceneResponses = this.executeLuceneQueries(luceneTargets, options);
-    const pplResponses = this.executePPLQueries(pplTargets, options);
-    if (luceneResponses) {
+
+    if (!luceneTargets.length) {
+      const luceneResponses = this.executeLuceneQueries(luceneTargets, options);
       subQueries.push(luceneResponses);
     }
-    if (pplResponses) {
+    if (!pplTargets.length) {
+      const pplResponses = this.executePPLQueries(pplTargets, options);
       subQueries.push(pplResponses);
     }
     if (subQueries.length === 0) {
@@ -490,11 +491,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   private executeLuceneQueries(
     targets: ElasticsearchQuery[],
     options: DataQueryRequest<ElasticsearchQuery>
-  ): Observable<DataQueryResponse> | undefined {
-    // if (targets.length === 0) {
-    //   return;
-    // }
-
+  ): Observable<DataQueryResponse> {
     let payload = '';
 
     for (const target of targets) {
@@ -532,11 +529,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   private executePPLQueries(
     targets: ElasticsearchQuery[],
     options: DataQueryRequest<ElasticsearchQuery>
-  ): Observable<DataQueryResponse> | undefined {
-    // if (targets.length === 0) {
-    //   return;
-    // }
-
+  ): Observable<DataQueryResponse> {
     const subQueries: Array<Observable<DataQueryResponse>> = [];
 
     for (const target of targets) {
