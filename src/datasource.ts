@@ -23,7 +23,7 @@ import { IndexPattern } from './index_pattern';
 import { ElasticQueryBuilder } from './query_builder';
 import { toUtc } from '@grafana/data';
 import { defaultBucketAgg, hasMetricOfType } from './query_def';
-import { getBackendSrv, getDataSourceSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
+import { getBackendSrv, getDataSourceSrv, getTemplateSrv } from '@grafana/runtime';
 import { DataLinkConfig, ElasticsearchOptions, ElasticsearchQuery, ElasticsearchQueryType } from './types';
 import { metricAggregationConfig } from './components/QueryEditor/MetricAggregationsEditor/utils';
 import {
@@ -65,10 +65,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   languageProvider: LanguageProvider;
   pplEnabled?: boolean;
 
-  constructor(
-    instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>,
-    private readonly templateSrv: TemplateSrv = getTemplateSrv()
-  ) {
+  constructor(instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>) {
     super(instanceSettings);
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
@@ -205,7 +202,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       dateRanges.push({ range: rangeEnd });
     }
 
-    const queryInterpolated = this.templateSrv.replace(queryString, {}, 'lucene');
+    const queryInterpolated = getTemplateSrv().replace(queryString, {}, 'lucene');
     const query = {
       bool: {
         filter: [
@@ -321,11 +318,11 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
   private interpolateLuceneQuery(queryString: string, scopedVars: ScopedVars) {
     // Elasticsearch Lucene queryString should always be '*' if empty string
-    return this.templateSrv.replace(queryString, scopedVars, 'lucene') || '*';
+    return getTemplateSrv().replace(queryString, scopedVars, 'lucene') || '*';
   }
 
   private interpolatePPLQuery(queryString: string, scopedVars: ScopedVars) {
-    return this.templateSrv.replace(queryString, scopedVars, 'pipe');
+    return getTemplateSrv().replace(queryString, scopedVars, 'pipe');
   }
 
   interpolateVariablesInQueries(queries: ElasticsearchQuery[], scopedVars: ScopedVars): ElasticsearchQuery[] {
@@ -505,7 +502,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     // and then sending string will error out.
     payload = payload.replace(/"\$timeFrom"/g, options.range.from.valueOf().toString());
     payload = payload.replace(/"\$timeTo"/g, options.range.to.valueOf().toString());
-    payload = this.templateSrv.replace(payload, options.scopedVars);
+    payload = getTemplateSrv().replace(payload, options.scopedVars);
 
     return from(this.post(this.getMultiSearchUrl(), payload)).pipe(
       map((res: any) => {
@@ -568,10 +565,10 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
    * Creates the payload string for a Lucene query
    */
   private createLuceneQuery(target: ElasticsearchQuery, options: DataQueryRequest<ElasticsearchQuery>): string {
-    let queryString = this.templateSrv.replace(target.query, options.scopedVars, 'lucene');
+    let queryString = getTemplateSrv().replace(target.query, options.scopedVars, 'lucene');
     // @ts-ignore
     // add global adhoc filters to timeFilter
-    const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+    const adhocFilters = getTemplateSrv().getAdhocFilters(this.name);
     // Elasticsearch queryString should always be '*' if empty string
     if (!queryString || queryString === '') {
       queryString = '*';
@@ -586,7 +583,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       queryObj = this.queryBuilder.getLogsQuery(target, adhocFilters, queryString);
     } else {
       if (target.alias) {
-        target.alias = this.templateSrv.replace(target.alias, options.scopedVars, 'lucene');
+        target.alias = getTemplateSrv().replace(target.alias, options.scopedVars, 'lucene');
       }
       queryObj = this.queryBuilder.build(target, adhocFilters, queryString);
     }
@@ -601,12 +598,12 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
    * Creates the payload string for a PPL query
    */
   private createPPLQuery(target: ElasticsearchQuery, options: DataQueryRequest<ElasticsearchQuery>): string {
-    let queryString = this.templateSrv.replace(target.query, options.scopedVars, 'pipe');
+    let queryString = getTemplateSrv().replace(target.query, options.scopedVars, 'pipe');
     let queryObj;
 
     // @ts-ignore
     // add global adhoc filters to timeFilter
-    const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+    const adhocFilters = getTemplateSrv().getAdhocFilters(this.name);
 
     // Elasticsearch PPL queryString should always be 'source=indexName' if empty string
     if (!queryString) {
@@ -752,13 +749,13 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     const parsedQuery = JSON.parse(query);
     if (query) {
       if (parsedQuery.find === 'fields') {
-        parsedQuery.field = this.templateSrv.replace(parsedQuery.field, {}, 'lucene');
+        parsedQuery.field = getTemplateSrv().replace(parsedQuery.field, {}, 'lucene');
         return this.getFields(query, range);
       }
 
       if (parsedQuery.find === 'terms') {
-        parsedQuery.field = this.templateSrv.replace(parsedQuery.field, {}, 'lucene');
-        parsedQuery.query = this.templateSrv.replace(parsedQuery.query || '*', {}, 'lucene');
+        parsedQuery.field = getTemplateSrv().replace(parsedQuery.field, {}, 'lucene');
+        parsedQuery.query = getTemplateSrv().replace(parsedQuery.query || '*', {}, 'lucene');
         return this.getTerms(query, range);
       }
     }
@@ -776,13 +773,13 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
   targetContainsTemplate(target: any) {
     // @ts-ignore
-    if (this.templateSrv.variableExists(target.query) || this.templateSrv.variableExists(target.alias)) {
+    if (getTemplateSrv().variableExists(target.query) || getTemplateSrv().variableExists(target.alias)) {
       return true;
     }
 
     for (const bucketAgg of target.bucketAggs) {
       // @ts-ignore
-      if (this.templateSrv.variableExists(bucketAgg.field) || this.objectContainsTemplate(bucketAgg.settings)) {
+      if (getTemplateSrv().variableExists(bucketAgg.field) || this.objectContainsTemplate(bucketAgg.settings)) {
         return true;
       }
     }
@@ -790,7 +787,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     for (const metric of target.metrics) {
       if (
         // @ts-ignore
-        this.templateSrv.variableExists(metric.field) ||
+        getTemplateSrv().variableExists(metric.field) ||
         this.objectContainsTemplate(metric.settings) ||
         this.objectContainsTemplate(metric.meta)
       ) {
@@ -820,7 +817,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     for (const key of Object.keys(obj)) {
       if (this.isPrimitive(obj[key])) {
         // @ts-ignore
-        if (this.templateSrv.variableExists(obj[key])) {
+        if (getTemplateSrv().variableExists(obj[key])) {
           return true;
         }
       } else if (Array.isArray(obj[key])) {

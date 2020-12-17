@@ -3,27 +3,24 @@ import LanguageProvider from './language_provider';
 import { ElasticDatasource } from './datasource';
 import { DataSourceInstanceSettings } from '@grafana/data';
 import { ElasticsearchOptions, PromQuery } from './types';
-// import { TemplateSrv } from '../../../features/templating/template_srv';
-// @ts-ignore
-import { TemplateSrv } from '@grafana/runtime';
 
-const templateSrvStub = {
-  getAdhocFilters: jest.fn(() => [] as any[]),
-  replace: jest.fn((a: string) => a),
-} as any;
+jest.mock('@grafana/runtime', () => ({
+  ...((jest.requireActual('@grafana/runtime') as unknown) as object),
+  getTimeSrv: () => ({
+    getAdhocFilters: jest.fn(() => [] as any[]),
+    replace: jest.fn((a: string) => a),
+  }),
+}));
 
-const dataSource = new ElasticDatasource(
-  {
-    url: 'http://es.com',
-    database: '[asd-]YYYY.MM.DD',
-    jsonData: {
-      interval: 'Daily',
-      esVersion: 2,
-      timeField: '@time',
-    },
-  } as DataSourceInstanceSettings<ElasticsearchOptions>,
-  templateSrvStub as TemplateSrv
-);
+const dataSource = new ElasticDatasource({
+  url: 'http://es.com',
+  database: '[asd-]YYYY.MM.DD',
+  jsonData: {
+    interval: 'Daily',
+    esVersion: 2,
+    timeField: '@time',
+  },
+} as DataSourceInstanceSettings<ElasticsearchOptions>);
 describe('transform prometheus query to elasticsearch query', () => {
   it('Prometheus query with exact equals labels ( 2 labels ) and metric __name__', () => {
     const instance = new LanguageProvider(dataSource);
