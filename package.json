@@ -38,6 +38,7 @@
     "prettier": "1.19.1",
     "prismjs": "1.21.0",
     "react-use": "13.27.0",
+    "request-promise-native": "^1.0.9",
     "terser-webpack-plugin": "2.3.5",
     "ts-jest": "26.4.4",
     "ts-loader": "8.0.4",
