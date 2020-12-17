@@ -17,8 +17,8 @@ describe('AddRemove Button', () => {
     it('Should only show the add button', () => {
       render(<TestComponent items={['something']} />);
 
-      // expect(screen.getByText('add')).toBeInTheDocument();
-      // expect(screen.queryByText('remove')).not.toBeInTheDocument();
+      expect(screen.getByText('add')).toBeInTheDocument();
+      expect(screen.queryByText('remove')).not.toBeInTheDocument();
     });
   });
 
