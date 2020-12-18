@@ -15,8 +15,8 @@ const templateSrvStub = {
 const dataSource = new ElasticDatasource(
   {
     url: 'http://es.com',
-    database: '[asd-]YYYY.MM.DD',
     jsonData: {
+      database: '[asd-]YYYY.MM.DD',
       interval: 'Daily',
       esVersion: 2,
       timeField: '@time',
