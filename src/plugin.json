@@ -1,6 +1,6 @@
 {
   "type": "datasource",
-  "name": "OpenDistro for Elasticsearch",
+  "name": "Open Distro for Elasticsearch",
   "id": "grafana-es-open-distro-datasource",
   "category": "logging",
 

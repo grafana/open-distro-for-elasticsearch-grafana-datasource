@@ -20,7 +20,7 @@ import { ElasticDatasource, enhanceDataFrame } from './datasource';
 import { PPLFormatType } from './components/QueryEditor/PPLFormatEditor/formats';
 // import { backendSrv } from 'app/core/services/backend_srv'; // will use the version in __mocks__
 // @ts-ignore
-import { getBackendSrv, TemplateSrv } from '@grafana/runtime';
+import { getBackendSrv } from '@grafana/runtime';
 import { ElasticsearchOptions, ElasticsearchQuery, ElasticsearchQueryType } from './types';
 import { Filters } from './components/QueryEditor/BucketAggregationsEditor/aggregations';
 import { matchers } from './dependencies/matchers';
@@ -43,6 +43,16 @@ jest.mock('@grafana/runtime', () => ({
       },
     };
   },
+  getTemplateSrv: () => ({
+    replace: jest.fn(text => {
+      if (text.startsWith('$')) {
+        return `resolvedVariable`;
+      } else {
+        return text;
+      }
+    }),
+    getAdhocFilters: jest.fn(() => []),
+  }),
 }));
 
 const createTimeRange = (from: DateTime, to: DateTime): TimeRange => ({
@@ -61,17 +71,6 @@ describe('ElasticDatasource', function(this: any) {
     jest.clearAllMocks();
   });
 
-  const templateSrv: any = {
-    replace: jest.fn(text => {
-      if (text.startsWith('$')) {
-        return `resolvedVariable`;
-      } else {
-        return text;
-      }
-    }),
-    getAdhocFilters: jest.fn(() => []),
-  };
-
   interface TestContext {
     ds: ElasticDatasource;
   }
@@ -79,7 +78,7 @@ describe('ElasticDatasource', function(this: any) {
 
   function createDatasource(instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>) {
     instanceSettings.jsonData = instanceSettings.jsonData || ({} as ElasticsearchOptions);
-    ctx.ds = new ElasticDatasource(instanceSettings, templateSrv as TemplateSrv);
+    ctx.ds = new ElasticDatasource(instanceSettings);
   }
 
   describe('When testing datasource with index pattern', () => {
@@ -1277,18 +1276,16 @@ describe('ElasticDatasource', function(this: any) {
 
   describe('query', () => {
     it('should replace range as integer not string', () => {
-      const dataSource = new ElasticDatasource(
-        {
-          url: ELASTICSEARCH_MOCK_URL,
-          jsonData: {
-            database: '[asd-]YYYY.MM.DD',
-            interval: 'Daily',
-            esVersion: 2,
-            timeField: '@time',
-          },
-        } as DataSourceInstanceSettings<ElasticsearchOptions>,
-        templateSrv as TemplateSrv
-      );
+      const dataSource = new ElasticDatasource({
+        url: ELASTICSEARCH_MOCK_URL,        
+        jsonData: {
+          database: '[asd-]YYYY.MM.DD',
+          interval: 'Daily',
+          esVersion: 2,
+          timeField: '@time',
+        },
+      } as DataSourceInstanceSettings<ElasticsearchOptions>);
+
       (dataSource as any).post = jest.fn(() => Promise.resolve({ responses: [] }));
       dataSource.query(createElasticQuery());
 
@@ -1330,7 +1327,7 @@ describe('ElasticDatasource', function(this: any) {
       const instanceSettings = {
         jsonData: { pplEnabled: false } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>;
-      const ds = new ElasticDatasource(instanceSettings, templateSrv as TemplateSrv);
+      const ds = new ElasticDatasource(instanceSettings);
       const supportedTypes = ds.getSupportedQueryTypes();
       expect(supportedTypes.length).toBe(1);
       expect(supportedTypes).toEqual([ElasticsearchQueryType.Lucene]);
@@ -1340,7 +1337,7 @@ describe('ElasticDatasource', function(this: any) {
       const instanceSettings = {
         jsonData: { pplEnabled: true } as ElasticsearchOptions,
       } as DataSourceInstanceSettings<ElasticsearchOptions>;
-      const ds = new ElasticDatasource(instanceSettings, templateSrv as TemplateSrv);
+      const ds = new ElasticDatasource(instanceSettings);
       const supportedTypes = ds.getSupportedQueryTypes();
       expect(supportedTypes.length).toBe(2);
       expect(supportedTypes).toEqual(
