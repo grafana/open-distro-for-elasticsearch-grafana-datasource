@@ -6,3 +6,6 @@ const standard = require('@grafana/toolkit/src/config/jest.plugin.config');
 
 // This process will use the same config that `yarn test` is using
 module.exports = standard.jestConfig();
+
+// Some libraries, like jest-dom should be configured in setupFilesAfterEnv instead of setupFiles
+module.exports.setupFilesAfterEnv = ['./config/setupTests.ts'];

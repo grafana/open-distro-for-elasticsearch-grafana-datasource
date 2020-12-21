@@ -1009,10 +1009,33 @@
     rxjs "6.6.2"
     xss "1.0.6"
 
+"@grafana/data@7.3.5":
+  version "7.3.5"
+  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-7.3.5.tgz#3c191c3562b1a1c138e7d54921839ce7688a2dd7"
+  integrity sha512-UviOelttr5kC5+8Rr61TrjDpElAYx4zA5GPqwz0GRZsJi/9vF5LTUv002wSnEZ6ifkUpvlZV7UqFJGZt9CdUFQ==
+  dependencies:
+    "@braintree/sanitize-url" "4.0.0"
+    "@types/d3-interpolate" "^1.3.1"
+    apache-arrow "0.16.0"
+    lodash "4.17.19"
+    rxjs "6.6.2"
+    xss "1.0.6"
+
 "@grafana/e2e-selectors@7.3.4":
   version "7.3.4"
   resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-7.3.4.tgz#64fc96fad0ac0697a836c67341dc4f13f7014356"
   integrity sha512-muE7KexaCF25bGn+Y7SIeB7ROX6kZnhSDlEYqPTJEbb1mjCvA91PBc/BNjrZLCGsAqWV74PH0rpY143LSgGFEQ==
+  dependencies:
+    "@grafana/tsconfig" "^1.0.0-rc1"
+    commander "5.0.0"
+    execa "4.0.0"
+    typescript "4.0.2"
+    yaml "^1.8.3"
+
+"@grafana/e2e-selectors@7.3.5":
+  version "7.3.5"
+  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-7.3.5.tgz#3e63568de1e607f2f4d43e03af15dce60017504f"
+  integrity sha512-fspHXbfP5mGvdDPqjQjY8rXyiY08cnG/Jn7Lr1RrP9IYaR2YjZCfmg8NwkJrVvCbLOYKhCmm1A7scONO28876Q==
   dependencies:
     "@grafana/tsconfig" "^1.0.0-rc1"
     commander "5.0.0"
@@ -1160,7 +1183,7 @@
   resolved "https://registry.yarnpkg.com/@grafana/tsconfig/-/tsconfig-1.0.0-rc1.tgz#d07ea16755a50cae21000113f30546b61647a200"
   integrity sha512-nucKPGyzlSKYSiJk5RA8GzMdVWhdYNdF+Hh65AXxjD9PlY69JKr5wANj8bVdQboag6dgg0BFKqgKPyY+YtV4Iw==
 
-"@grafana/ui@7.3.4", "@grafana/ui@latest", "@grafana/ui@next":
+"@grafana/ui@7.3.4", "@grafana/ui@next":
   version "7.3.4"
   resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-7.3.4.tgz#90e1236d31f038598d69d36256f0295be90dc19e"
   integrity sha512-u3gVNhBHPBFBH99nMjgRFym+TU+dnZcHIYJoYfPmdAMgIKHv0F78VMamCqlgrJgP9Dc92GXZTumG79ryC/FShQ==
@@ -1168,6 +1191,57 @@
     "@emotion/core" "^10.0.27"
     "@grafana/data" "7.3.4"
     "@grafana/e2e-selectors" "7.3.4"
+    "@grafana/slate-react" "0.22.9-grafana"
+    "@grafana/tsconfig" "^1.0.0-rc1"
+    "@iconscout/react-unicons" "1.1.4"
+    "@torkelo/react-select" "3.0.8"
+    "@types/hoist-non-react-statics" "3.3.1"
+    "@types/react-beautiful-dnd" "12.1.2"
+    "@types/react-color" "3.0.1"
+    "@types/react-select" "3.0.8"
+    "@types/react-table" "7.0.12"
+    "@types/slate" "0.47.1"
+    "@types/slate-react" "0.22.5"
+    bizcharts "^3.5.8"
+    classnames "2.2.6"
+    d3 "5.15.0"
+    emotion "10.0.27"
+    hoist-non-react-statics "3.3.2"
+    immutable "3.8.2"
+    jquery "3.5.1"
+    lodash "4.17.19"
+    moment "2.24.0"
+    monaco-editor "0.20.0"
+    papaparse "5.3.0"
+    rc-cascader "1.0.1"
+    rc-drawer "3.1.3"
+    rc-slider "9.3.1"
+    rc-time-picker "^3.7.3"
+    react "16.12.0"
+    react-beautiful-dnd "13.0.0"
+    react-calendar "2.19.2"
+    react-color "2.18.0"
+    react-custom-scrollbars "4.2.1"
+    react-dom "16.12.0"
+    react-highlight-words "0.16.0"
+    react-hook-form "5.1.3"
+    react-monaco-editor "0.36.0"
+    react-popper "1.3.3"
+    react-storybook-addon-props-combinations "1.1.0"
+    react-table "7.0.0"
+    react-transition-group "4.3.0"
+    slate "0.47.8"
+    tinycolor2 "1.4.1"
+    uplot "1.1.2"
+
+"@grafana/ui@latest":
+  version "7.3.5"
+  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-7.3.5.tgz#59e2d9fd07a3addab39a08f80959a58ca019be79"
+  integrity sha512-xEchdYCp2rly5e56AtvOcCYXUs7f2Ecrh0Q8jHluaJqOMbCB7KVeVSSWWUNUM5KzZOC9D/vMKDRgVh5CxeEheg==
+  dependencies:
+    "@emotion/core" "^10.0.27"
+    "@grafana/data" "7.3.5"
+    "@grafana/e2e-selectors" "7.3.5"
     "@grafana/slate-react" "0.22.9-grafana"
     "@grafana/tsconfig" "^1.0.0-rc1"
     "@iconscout/react-unicons" "1.1.4"
@@ -1954,6 +2028,11 @@
   version "1.19.1"
   resolved "https://registry.yarnpkg.com/@types/prettier/-/prettier-1.19.1.tgz#33509849f8e679e4add158959fdb086440e9553f"
   integrity sha512-5qOlnZscTn4xxM5MeGXAMOsIOIKIbh9e85zJWfBRVPlRMEVawzoPhINYbRGkBZCI8LxvBe7tJCdWiarA99OZfQ==
+
+"@types/prismjs@1.16.0":
+  version "1.16.0"
+  resolved "https://registry.yarnpkg.com/@types/prismjs/-/prismjs-1.16.0.tgz#4328c9f65698e59f4feade8f4e5d928c748fd643"
+  integrity sha512-mEyuziLrfDCQ4juQP1k706BUU/c8OGn/ZFl69AXXY6dStHClKX4P+N8+rhqpul1vRDA2VOygzMRSJJZHyDEOfw==
 
 "@types/prop-types@*":
   version "15.7.3"

@@ -13,14 +13,15 @@ jest.mock('@grafana/runtime', () => ({
 }));
 
 const dataSource = new ElasticDatasource({
-  url: 'http://es.com',
-  database: '[asd-]YYYY.MM.DD',
+  url: 'http://es.com',  
   jsonData: {
+    database: '[asd-]YYYY.MM.DD',
     interval: 'Daily',
     esVersion: 2,
     timeField: '@time',
   },
 } as DataSourceInstanceSettings<ElasticsearchOptions>);
+
 describe('transform prometheus query to elasticsearch query', () => {
   it('Prometheus query with exact equals labels ( 2 labels ) and metric __name__', () => {
     const instance = new LanguageProvider(dataSource);
