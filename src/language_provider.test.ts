@@ -13,7 +13,7 @@ jest.mock('@grafana/runtime', () => ({
 }));
 
 const dataSource = new ElasticDatasource({
-  url: 'http://es.com',  
+  url: 'http://es.com',
   jsonData: {
     database: '[asd-]YYYY.MM.DD',
     interval: 'Daily',

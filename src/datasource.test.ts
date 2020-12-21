@@ -1277,7 +1277,7 @@ describe('ElasticDatasource', function(this: any) {
   describe('query', () => {
     it('should replace range as integer not string', () => {
       const dataSource = new ElasticDatasource({
-        url: ELASTICSEARCH_MOCK_URL,        
+        url: ELASTICSEARCH_MOCK_URL,
         jsonData: {
           database: '[asd-]YYYY.MM.DD',
           interval: 'Daily',
