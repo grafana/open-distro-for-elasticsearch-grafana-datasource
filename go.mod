@@ -9,7 +9,8 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/gosimple/slug v1.9.0 // indirect
 	github.com/grafana/grafana v6.1.6+incompatible
-	github.com/grafana/grafana-plugin-sdk-go v0.77.0
+	github.com/grafana/grafana-aws-sdk v0.0.0-20210112151715-f082803d987a
+	github.com/grafana/grafana-plugin-sdk-go v0.79.0
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/smartystreets/goconvey v1.6.4

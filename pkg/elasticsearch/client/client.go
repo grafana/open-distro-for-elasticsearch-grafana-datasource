@@ -17,9 +17,9 @@ import (
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
+	"github.com/grafana/grafana-aws-sdk/pkg/sigv4"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -31,7 +31,7 @@ var (
 
 // TODO: use real settings for HTTP client
 var newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
-	transport := &http.Transport{
+	var transport http.RoundTripper = &http.Transport{
 		TLSClientConfig: &tls.Config{
 			Renegotiation: tls.RenegotiateFreelyAsClient,
 		},
@@ -46,10 +46,49 @@ var newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*htt
 		IdleConnTimeout:       90 * time.Second,
 	}
 
+	jsonDataStr := ds.JSONData
+	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
+	if err != nil {
+		return nil, err
+	}
+
+	// Add SigV4 middleware if enabled
+	if jsonData != nil && jsonData.Get("sigV4Auth").MustBool() {
+		log.DefaultLogger.Debug("SigV4 auth enabled")
+		sigV4Config, err := GetSigV4Config(ds)
+		if err != nil {
+			return nil, err
+		}
+
+		transport = sigv4.New(sigV4Config, transport)
+	}
+
 	return &http.Client{
 		Timeout:   30 * time.Second,
 		Transport: transport,
 	}, nil
+}
+
+func GetSigV4Config(ds *backend.DataSourceInstanceSettings) (*sigv4.Config, error) {
+	decrypted := ds.DecryptedSecureJSONData
+	jsonDataStr := ds.JSONData
+	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
+	if err != nil {
+		return nil, err
+	}
+
+	sigV4Config := &sigv4.Config{
+		Service:       "es", // Always "es" for elasticsearch/open distro
+		AccessKey:     decrypted["sigV4AccessKey"],
+		SecretKey:     decrypted["sigV4SecretKey"],
+		Region:        jsonData.Get("sigV4Region").MustString(),
+		AssumeRoleARN: jsonData.Get("sigV4AssumeRoleArn").MustString(),
+		AuthType:      jsonData.Get("sigV4AuthType").MustString(),
+		Profile:       jsonData.Get("sigV4Profile").MustString(),
+		ExternalID:    jsonData.Get("sigV4ExternalId").MustString(),
+	}
+
+	return sigV4Config, nil
 }
 
 // Client represents a client which can interact with elasticsearch api
