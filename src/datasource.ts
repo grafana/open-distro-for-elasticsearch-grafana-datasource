@@ -139,7 +139,6 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
    * @param url the url to query the index on, for example `/_mapping`.
    */
   private get(url: string, range = getDefaultTimeRange()) {
-    console.log(range);
     const indexList = this.indexPattern.getIndexList(range.from, range.to);
     if (_.isArray(indexList) && indexList.length) {
       return this.requestAllIndices(indexList, url).then((results: any) => {
