@@ -118,7 +118,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       .catch((err: any) => {
         if (err.data && err.data.error) {
           throw {
-            message: 'Elasticsearch error: ' + err.data.error.reason,
+            message: `Elasticsearch error: ${err.data.error.reason}. ${err.data.error.details}`,
             error: err.data.error,
           };
         }
