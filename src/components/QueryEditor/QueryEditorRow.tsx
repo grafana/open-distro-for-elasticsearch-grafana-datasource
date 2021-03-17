@@ -1,5 +1,5 @@
 import { GrafanaTheme } from '@grafana/data';
-import { IconButton, InlineLabel, stylesFactory, useTheme } from '@grafana/ui';
+import { IconButton, InlineFieldRow, InlineLabel, stylesFactory, useTheme, InlineSegmentGroup } from '@grafana/ui';
 import { css } from 'emotion';
 import { noop } from 'lodash';
 import React, { FunctionComponent } from 'react';
@@ -24,46 +24,45 @@ export const QueryEditorRow: FunctionComponent<Props> = ({
   const styles = getStyles(theme);
 
   return (
-    <fieldset className={styles.root}>
-      <InlineLabel>
-        <legend className={styles.label}>{label}</legend>
-        {onHideClick && (
-          <IconButton
-            name={hidden ? 'eye-slash' : 'eye'}
-            onClick={onHideClick}
-            surface="header"
-            size="sm"
-            aria-pressed={hidden}
-            aria-label="hide metric"
-            className={styles.icon}
-          />
-        )}
-        {onRemoveClick && (
-          <IconButton
-            name="trash-alt"
-            surface="header"
-            size="sm"
-            className={styles.icon}
-            onClick={onRemoveClick || noop}
-            disabled={disableRemove}
-            aria-label="remove metric"
-          />
-        )}
-      </InlineLabel>
+    <InlineFieldRow>
+      <InlineSegmentGroup>
+        <InlineLabel width={17} as="div">
+          <span>{label}</span>
+          <span className={styles.iconWrapper}>
+            {onHideClick && (
+              <IconButton
+                name={hidden ? 'eye-slash' : 'eye'}
+                onClick={onHideClick}
+                surface="header"
+                size="sm"
+                aria-pressed={hidden}
+                aria-label="hide metric"
+                className={styles.icon}
+              />
+            )}
+            {onRemoveClick && (
+              <IconButton
+                name="trash-alt"
+                surface="header"
+                size="sm"
+                className={styles.icon}
+                onClick={onRemoveClick || noop}
+                disabled={disableRemove}
+                aria-label="remove metric"
+              />
+            )}
+          </span>
+        </InlineLabel>
+      </InlineSegmentGroup>
       {children}
-    </fieldset>
+    </InlineFieldRow>
   );
 };
 
 const getStyles = stylesFactory((theme: GrafanaTheme) => {
   return {
-    root: css`
+    iconWrapper: css`
       display: flex;
-      margin-bottom: ${theme.spacing.xs};
-    `,
-    label: css`
-      font-size: ${theme.typography.size.sm};
-      margin: 0;
     `,
     icon: css`
       color: ${theme.colors.textWeak};
