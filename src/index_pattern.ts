@@ -1,4 +1,4 @@
-import { toUtc, dateTime } from '@grafana/data';
+import { toUtc, dateTime, DateTime, TimeRange } from '@grafana/data';
 
 const intervalMap: any = {
   Hourly: { startOf: 'hour', amount: 'hours' },
@@ -23,16 +23,21 @@ export class IndexPattern {
     }
   }
 
-  getIndexList(from: any, to: any) {
+  getIndexList(from?: DateTime, to?: DateTime) {
+    // When no `from` or `to` is provided, we request data from 7 subsequent/previous indices
+    // for the provided index pattern.
+    // This is useful when requesting log context where the only time data we have is the log
+    // timestamp.
+    const indexOffset = 7;
     if (!this.interval) {
       return this.pattern;
     }
 
     const intervalInfo = intervalMap[this.interval];
-    const start = dateTime(from)
+    const start = dateTime(from || dateTime(to).add(-indexOffset, intervalInfo.amount))
       .utc()
       .startOf(intervalInfo.startOf);
-    const endEpoch = dateTime(to)
+    const endEpoch = dateTime(to || dateTime(from).add(indexOffset, intervalInfo.amount))
       .utc()
       .startOf(intervalInfo.startOf)
       .valueOf();
@@ -63,4 +68,14 @@ export class IndexPattern {
     }
     return indexPattern;
   }
+}
+
+export function getDefaultTimeRange(): TimeRange {
+  const now = dateTime();
+
+  return {
+    from: dateTime(now).subtract(6, 'hour'),
+    to: now,
+    raw: { from: 'now-6h', to: 'now' },
+  };
 }

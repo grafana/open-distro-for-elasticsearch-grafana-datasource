@@ -14,12 +14,11 @@ import {
   MetricFindValue,
   dateTime,
   TimeRange,
-  DefaultTimeRange,
   LoadingState,
 } from '@grafana/data';
 import LanguageProvider from './language_provider';
 import { ElasticResponse } from './elastic_response';
-import { IndexPattern } from './index_pattern';
+import { IndexPattern, getDefaultTimeRange } from './index_pattern';
 import { ElasticQueryBuilder } from './query_builder';
 import { toUtc } from '@grafana/data';
 import { defaultBucketAgg, hasMetricOfType } from './query_def';
@@ -139,8 +138,9 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
    *
    * @param url the url to query the index on, for example `/_mapping`.
    */
-  private get(url: string, range = DefaultTimeRange) {
-    const indexList = this.indexPattern.getIndexList(range.from.valueOf(), range.to.valueOf());
+  private get(url: string, range = getDefaultTimeRange()) {
+    console.log(range);
+    const indexList = this.indexPattern.getIndexList(range.from, range.to);
     if (_.isArray(indexList) && indexList.length) {
       return this.requestAllIndices(indexList, url).then((results: any) => {
         results.data.$$config = results.config;
@@ -706,7 +706,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     });
   }
 
-  getTerms(queryDef: any, range = DefaultTimeRange) {
+  getTerms(queryDef: any, range = getDefaultTimeRange()) {
     const searchType = this.esVersion >= 5 ? 'query_then_fetch' : 'count';
     const header = this.getQueryHeader(searchType, range.from, range.to);
     let esQuery = JSON.stringify(this.queryBuilder.getTermsQuery(queryDef));
