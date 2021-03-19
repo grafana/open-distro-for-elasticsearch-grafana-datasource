@@ -1,7 +1,7 @@
 version: '3'
 services:
   odfe:
-    image: amazon/opendistro-for-elasticsearch:1.11.0
+    image: amazon/opendistro-for-elasticsearch:1.13.1
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
@@ -18,7 +18,7 @@ services:
       - 9600:9600 # required for Performance Analyzer
 
   kibana:
-    image: amazon/opendistro-for-elasticsearch-kibana:1.11.0
+    image: amazon/opendistro-for-elasticsearch-kibana:1.13.1
     ports:
       - 5601:5601
     expose:
