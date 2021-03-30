@@ -15,12 +15,12 @@ import {
   dateTime,
   TimeRange,
   LoadingState,
+  toUtc,
 } from '@grafana/data';
 import LanguageProvider from './language_provider';
 import { ElasticResponse } from './elastic_response';
 import { IndexPattern, getDefaultTimeRange } from './index_pattern';
 import { ElasticQueryBuilder } from './query_builder';
-import { toUtc } from '@grafana/data';
 import { defaultBucketAgg, hasMetricOfType } from './query_def';
 import { getBackendSrv, getDataSourceSrv, getTemplateSrv } from '@grafana/runtime';
 import { DataLinkConfig, ElasticsearchOptions, ElasticsearchQuery, ElasticsearchQueryType } from './types';
