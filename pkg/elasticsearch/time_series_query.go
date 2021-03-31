@@ -157,7 +157,9 @@ func (p *timeSeriesQueryParser) parseMetrics(model *simplejson.Json) ([]*MetricA
 }
 
 func mergeResponses(responses ...*backend.QueryDataResponse) *backend.QueryDataResponse {
-	result := &backend.QueryDataResponse{}
+	result := &backend.QueryDataResponse{
+		Responses: backend.Responses{},
+	}
 	for _, response := range responses {
 		for k, v := range response.Responses {
 			result.Responses[k] = v
