@@ -29,9 +29,18 @@ var (
 
 // TODO: use real settings for HTTP client
 var newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
+	jsonDataStr := ds.JSONData
+	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
+	if err != nil {
+		return nil, err
+	}
+
+	tlsSkipVerify := jsonData.Get("tlsSkipVerify").MustBool(false)
+
 	var transport http.RoundTripper = &http.Transport{
 		TLSClientConfig: &tls.Config{
-			Renegotiation: tls.RenegotiateFreelyAsClient,
+			Renegotiation:      tls.RenegotiateFreelyAsClient,
+			InsecureSkipVerify: tlsSkipVerify,
 		},
 		Proxy: http.ProxyFromEnvironment,
 		Dial: (&net.Dialer{
@@ -42,12 +51,6 @@ var newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*htt
 		ExpectContinueTimeout: 1 * time.Second,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
-	}
-
-	jsonDataStr := ds.JSONData
-	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
-	if err != nil {
-		return nil, err
 	}
 
 	// Add SigV4 middleware if enabled
