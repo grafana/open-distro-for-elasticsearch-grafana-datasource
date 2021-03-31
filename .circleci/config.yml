@@ -35,13 +35,10 @@ workflows:
       - publish_artifacts_to_gcs:
           requires:
             - package
-      - report:
-          requires:
-            - package
       - approve_release:
           type: approval
           requires:
-            - report
+            - package
           filters: *filter-only-release
       - publish_github_release:
           requires:
