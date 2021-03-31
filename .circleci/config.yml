@@ -132,6 +132,8 @@ jobs:
             - build-cache-{{ .Environment.CACHE_VERSION }}-{{ checksum "yarn.lock" }}
       - run:
           name: Build and test frontend
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
           command: |
             # hack for rxjs issue
             rm -rf ./node_modules/@grafana/data/node_modules/rxjs
