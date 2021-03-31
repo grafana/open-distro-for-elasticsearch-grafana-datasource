@@ -129,10 +129,11 @@ jobs:
     executor: golang_node_exec
     steps:
       - checkout
-      - restore_cache:
-          name: restore node_modules
-          keys:
-            - build-cache-{{ .Environment.CACHE_VERSION }}-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install dependencies
+          command: |
+            mkdir ci
+            [ -f ~/project/node_modules/.bin/grafana-toolkit ] || yarn install --frozen-lockfile
       - run:
           name: Build and test frontend
           environment:
