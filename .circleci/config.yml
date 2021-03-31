@@ -66,6 +66,9 @@ executors:
   default_exec: # declares a reusable executor
     docker:
       - image: srclosson/grafana-plugin-ci-alpine:latest
+  golang_node_exec:
+    docker:
+      - image: circleci/golang:1.14-node
   e2e_exec:
     docker:
       - image: srclosson/grafana-plugin-ci-e2e:latest
@@ -123,7 +126,7 @@ jobs:
             - dist
 
   build_frontend:
-    executor: default_exec
+    executor: golang_node_exec
     steps:
       - checkout
       - restore_cache:
