@@ -2,6 +2,7 @@ import { DataSourceSettings } from '@grafana/data';
 
 export function createDatasourceSettings<T>(jsonData: T): DataSourceSettings<T> {
   return {
+    typeName: '',
     id: 0,
     orgId: 0,
     name: 'datasource-test',
