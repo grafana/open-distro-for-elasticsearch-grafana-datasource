@@ -23,8 +23,6 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-const loggerName = "tsdb.elasticsearch.client"
-
 var (
 	clientLog = log.New()
 )

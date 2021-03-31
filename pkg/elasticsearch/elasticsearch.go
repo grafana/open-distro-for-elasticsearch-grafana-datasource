@@ -46,7 +46,10 @@ func newElasticsearchDatasourceInstance(settings backend.DataSourceInstanceSetti
 	}, nil
 }
 
-// CheckHealth checks if the plugin is running properly
+// CheckHealth handles health checks sent from Grafana to the plugin.
+// The main use case for these health checks is the test button on the
+// datasource configuration page which allows users to verify that
+// a datasource is working as expected.
 func (ds *ElasticsearchDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
 
@@ -63,6 +66,10 @@ func (ds *ElasticsearchDatasource) CheckHealth(ctx context.Context, req *backend
 	return res, nil
 }
 
+// QueryData handles multiple queries and returns multiple responses.
+// req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
+// The QueryDataResponse contains a map of RefID to the response for each query, and each response
+// contains Frames ([]*Frame).
 func (ds *ElasticsearchDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	// qdr := backend.NewQueryDataResponse()
 

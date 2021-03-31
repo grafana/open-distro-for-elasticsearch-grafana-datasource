@@ -620,7 +620,7 @@ func findAgg(target *Query, aggID string) (*BucketAgg, error) {
 }
 
 func getErrorFromElasticResponse(response *es.SearchResponse) error {
-	err := errors.New("")
+	var err error
 	json := utils.NewJsonFromAny(response.Error)
 	reason := json.Get("reason").MustString()
 	rootCauseReason := json.Get("root_cause").GetIndex(0).Get("reason").MustString()
