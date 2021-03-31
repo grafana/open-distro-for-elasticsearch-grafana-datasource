@@ -1,4 +1,4 @@
-# Open Distro for Elasticsearch Data Source - Native Plugin
+# Open Distro for Elasticsearch Data Source Development Guide
 
 ## Development
 
