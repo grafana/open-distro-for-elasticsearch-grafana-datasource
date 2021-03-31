@@ -4,8 +4,20 @@
 
 const standard = require('@grafana/toolkit/src/config/jest.plugin.config');
 
-// This process will use the same config that `yarn test` is using
-module.exports = standard.jestConfig();
+// This process will use the same config that `yarn test` is us
+const config = standard.jestConfig();
 
 // Some libraries, like jest-dom should be configured in setupFilesAfterEnv instead of setupFiles
-module.exports.setupFilesAfterEnv = ['./config/setupTests.ts'];
+config.setupFilesAfterEnv = ['./config/setupTests.ts'];
+
+module.exports = {
+  ...config,
+  globals: {
+    'ts-jest': {
+      isolatedModules: true,
+      tsconfig: path.resolve(process.cwd(), 'tsconfig.json'),
+    },
+  },
+  transformIgnorePatterns: ['/node_modules/', '\\.pnp\\.[^\\/]+$'],
+  ...{ runner: './jest-runner-serial.js' },
+};
