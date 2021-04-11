@@ -122,7 +122,7 @@ Instead of hard-coding things like server, application and sensor name in your m
 Variables are shown as dropdown select boxes at the top of the dashboard. These dropdowns make it easy to change the data
 being displayed in your dashboard.
 
-Check out the [Templating](https://grafana.com/docs/grafana/latest/variables/_index.md) documentation for an introduction to the templating feature and the different
+Check out the [Templating](https://grafana.com/docs/grafana/latest/variables/) documentation for an introduction to the templating feature and the different
 types of template variables.
 
 ### Query variable
@@ -174,7 +174,7 @@ Example dashboard:
 
 ## Annotations
 
-[Annotations](https://grafana.com/docs/grafana/latest/dashboards/annotations.md) allow you to overlay rich event information on top of graphs. You add annotation
+[Annotations](https://grafana.com/docs/grafana/latest/dashboards/annotations) allow you to overlay rich event information on top of graphs. You add annotation
 queries via the Dashboard menu / Annotations view. Grafana can query any Elasticsearch index
 for annotation events.
 
@@ -190,7 +190,7 @@ for annotation events.
 
 > Only available in Grafana v6.3+.
 
-Querying and displaying log data from Elasticsearch is available in [Explore](https://grafana.com/docs/grafana/latest/explore), and in the [logs panel](https://grafana.com/docs/grafana/latest/panels/visualizations/logs-panel.md) in dashboards.
+Querying and displaying log data from Elasticsearch is available in [Explore](https://grafana.com/docs/grafana/latest/explore), and in the [logs panel](https://grafana.com/docs/grafana/latest/panels/visualizations/logs-panel) in dashboards.
 Select the Elasticsearch data source, and then optionally enter a lucene query to display your logs.
 
 ## Piped Processing Language (PPL)
@@ -256,9 +256,8 @@ For more details on AWS SigV4, refer to the [AWS documentation](https://docs.aws
 
 > **Note:** Only available in Grafana v7.3+.
 
-In order to sign requests to your Amazon Elasticsearch Service domain, SigV4 can be enabled in the Grafana [configuration](https://grafana.com/docs/grafana/latest/administration/configuration.md#sigv4_auth_enabled).
+In order to sign requests to your Amazon Elasticsearch Service domain, SigV4 can be enabled in the Grafana [configuration](https://grafana.com/docs/grafana/latest/administration/configuration#sigv4_auth_enabled).
 
-Once AWS SigV4 is enabled, it can be configured on the Elasticsearch data source configuration page. Refer to [Cloudwatch authentication](https://grafana.com/docs/grafana/latest/cloudwatch.md#authentication) for more information about authentication options.
+Once AWS SigV4 is enabled, it can be configured on the Elasticsearch data source configuration page. Refer to [Cloudwatch authentication](https://grafana.com/docs/grafana/latest/cloudwatch#authentication) for more information about authentication options.
 
-{{< docs-imagebox img="/img/docs/v73/elasticsearch-sigv4-config-editor.png" max-width="500px" class="docs-image--no-shadow" caption="SigV4 configuration for AWS Elasticsearch Service" >}}
 ![SigV4 configuration for AWS Elasticsearch Service](https://grafana.com/static/img/docs/v73/elasticsearch-sigv4-config-editor.png)
