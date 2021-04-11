@@ -1,9 +1,9 @@
 
 
-# Open Distribution for Elasticsearch Grafana Data Source
+# Open Distro for Elasticsearch Grafana Data Source
 
-With the Open Distribution for Elasticsearch plugin, you can run many types of simple or complex Elasticsearch queries to
-visualize logs or metrics stored in Elasticsearch. You can also annotate your graphs with log events stored in Elasticsearch. The Open Distribution for Elasticsearch plugin is similar to the built-in Elasticsearch plugin, but with added support for AWS Sigv4 authentication and [Piped Processing Language (PPL)](https://opendistro.github.io/for-elasticsearch-docs/docs/ppl/).
+With the Open Distro for Elasticsearch plugin, you can run many types of simple or complex Elasticsearch queries to
+visualize logs or metrics stored in Elasticsearch. You can also annotate your graphs with log events stored in Elasticsearch. The Open Distro for Elasticsearch plugin is similar to the built-in Elasticsearch plugin, but with added support for AWS Sigv4 authentication and [Piped Processing Language (PPL)](https://opendistro.github.io/for-elasticsearch-docs/docs/ppl/).
 
 ## Adding the data source
 
@@ -11,7 +11,7 @@ visualize logs or metrics stored in Elasticsearch. You can also annotate your gr
 1. Open the side menu by clicking the Grafana icon in the top header.
 1. In the side menu under the `Dashboards` link you should find a link named `Data Sources`.
 1. Click the `+ Add data source` button in the top header.
-1. Select *Open Distribution for Elasticsearch* from the *Type* dropdown.
+1. Select *Open Distro for Elasticsearch* from the *Type* dropdown.
 
 > **Note:** If you're not seeing the `Data Sources` link in your side menu it means that you do not have the `Admin` role for the current organization.
 
@@ -44,7 +44,7 @@ http.cors.allow-origin: "*"
 
 ### Index settings
 
-![Elasticsearch data source details](/img/docs/elasticsearch/elasticsearch-ds-details-7-4.png)
+![Elasticsearch data source details](https://grafana.com/static/img/docs/elasticsearch/elasticsearch-ds-details-7-4.png)
 
 Here you can specify a default for the `time field` and specify the name of your Elasticsearch index. You can use
 a time pattern for the index name or a wildcard.
@@ -77,7 +77,7 @@ number followed by a valid time identifier, e.g. `1m` (1 minute) or `30s` (30 se
 > Only available in Grafana v6.3+.
 
 There are two parameters, `Message field name` and `Level field name`, that can optionally be configured from the data source settings page that determine
-which fields will be used for log messages and log levels when visualizing logs in [Explore]({{< relref "../explore" >}}).
+which fields will be used for log messages and log levels when visualizing logs in [Explore](https://grafana.com/docs/grafana/latest/explore).
 
 For example, if you're using a default setup of Filebeat for shipping logs to Elasticsearch the following configuration should work:
 
@@ -95,7 +95,7 @@ Each data link configuration consists of:
 
 ## Metric Query editor
 
-![Elasticsearch Query Editor](/img/docs/elasticsearch/query-editor-7-4.png)
+![Elasticsearch Query Editor](https://grafana.com/static/img/docs/elasticsearch/query-editor-7-4.png)
 
 The Elasticsearch query editor allows you to select multiple metrics and group by multiple terms or filters. Use the plus and minus icons to the right to add/remove
 metrics or group by clauses. Some metrics and group by clauses haves options, click the option text to expand the row to view and edit metric or group by options.
@@ -114,7 +114,7 @@ You can control the name for time series via the `Alias` input field.
 
 Some metric aggregations are called Pipeline aggregations, for example, *Moving Average* and *Derivative*. Elasticsearch pipeline metrics require another metric to be based on. Use the eye icon next to the metric to hide metrics from appearing in the graph. This is useful for metrics you only have in the query for use in a pipeline metric.
 
-![Pipeline aggregation editor](/img/docs/elasticsearch/pipeline-aggregation-editor-7-4.png)
+![Pipeline aggregation editor](https://grafana.com/static/img/docs/elasticsearch/pipeline-aggregation-editor-7-4.png)
 
 ## Templating
 
@@ -122,7 +122,7 @@ Instead of hard-coding things like server, application and sensor name in your m
 Variables are shown as dropdown select boxes at the top of the dashboard. These dropdowns make it easy to change the data
 being displayed in your dashboard.
 
-Check out the [Templating]({{< relref "../variables/_index.md" >}}) documentation for an introduction to the templating feature and the different
+Check out the [Templating](https://grafana.com/docs/grafana/latest/variables/_index.md) documentation for an introduction to the templating feature and the different
 types of template variables.
 
 ### Query variable
@@ -164,7 +164,7 @@ There are two syntaxes:
 Why two ways? The first syntax is easier to read and write but does not allow you to use a variable in the middle of a word. When the *Multi-value* or *Include all value*
 options are enabled, Grafana converts the labels from plain text to a lucene compatible condition.
 
-![Query with template variables](/img/docs/elasticsearch/elastic-templating-query-7-4.png)
+![Query with template variables](https://grafana.com/static/img/docs/elasticsearch/elastic-templating-query-7-4.png)
 
 In the above example, we have a lucene query that filters documents based on the `@hostname`  property using a variable named `$hostname`. It is also using
 a variable in the *Terms* group by field input box. This allows you to use a variable to quickly change how the data is grouped.
@@ -174,7 +174,7 @@ Example dashboard:
 
 ## Annotations
 
-[Annotations]({{< relref "../dashboards/annotations.md" >}}) allow you to overlay rich event information on top of graphs. You add annotation
+[Annotations](https://grafana.com/docs/grafana/latest/dashboards/annotations.md) allow you to overlay rich event information on top of graphs. You add annotation
 queries via the Dashboard menu / Annotations view. Grafana can query any Elasticsearch index
 for annotation events.
 
@@ -190,12 +190,12 @@ for annotation events.
 
 > Only available in Grafana v6.3+.
 
-Querying and displaying log data from Elasticsearch is available in [Explore]({{< relref "../explore" >}}), and in the [logs panel]({{< relref "../panels/visualizations/logs-panel.md" >}}) in dashboards.
+Querying and displaying log data from Elasticsearch is available in [Explore](https://grafana.com/docs/grafana/latest/explore), and in the [logs panel](https://grafana.com/docs/grafana/latest/panels/visualizations/logs-panel.md) in dashboards.
 Select the Elasticsearch data source, and then optionally enter a lucene query to display your logs.
 
 ## Piped Processing Language (PPL)
 
-The Open Distribution for Elasticsearch plugin allows you to run queries using PPL. For more information on PPL syntax, refer to the [Open Distro for Elasticsearch documentation](https://opendistro.github.io/for-elasticsearch-docs/docs/ppl/).
+The Open Distro for Elasticsearch plugin allows you to run queries using PPL. For more information on PPL syntax, refer to the [Open Distro for Elasticsearch documentation](https://opendistro.github.io/for-elasticsearch-docs/docs/ppl/).
 
 ### Log Queries
 
@@ -209,7 +209,7 @@ Optionally enter a lucene query into the query field to filter the log messages.
 
 ## Configure the data source with provisioning
 
-It's now possible to configure data sources using config files with Grafana's provisioning system. You can read more about how it works and all the settings you can set for data sources on the [provisioning docs page]({{< relref "../administration/provisioning/#datasources" >}})
+It's now possible to configure data sources using config files with Grafana's provisioning system. You can read more about how it works and all the settings you can set for data sources on the [provisioning docs page](https://grafana.com/docs/grafana/latest/administration/provisioning/#datasources)
 
 Here are some provisioning examples for this data source.
 
@@ -256,8 +256,9 @@ For more details on AWS SigV4, refer to the [AWS documentation](https://docs.aws
 
 > **Note:** Only available in Grafana v7.3+.
 
-In order to sign requests to your Amazon Elasticsearch Service domain, SigV4 can be enabled in the Grafana [configuration]({{< relref "../administration/configuration.md#sigv4_auth_enabled" >}}).
+In order to sign requests to your Amazon Elasticsearch Service domain, SigV4 can be enabled in the Grafana [configuration](https://grafana.com/docs/grafana/latest/administration/configuration.md#sigv4_auth_enabled).
 
-Once AWS SigV4 is enabled, it can be configured on the Elasticsearch data source configuration page. Refer to [Cloudwatch authentication]({{<relref "./cloudwatch.md#authentication" >}}) for more information about authentication options.
+Once AWS SigV4 is enabled, it can be configured on the Elasticsearch data source configuration page. Refer to [Cloudwatch authentication](https://grafana.com/docs/grafana/latest/cloudwatch.md#authentication) for more information about authentication options.
 
 {{< docs-imagebox img="/img/docs/v73/elasticsearch-sigv4-config-editor.png" max-width="500px" class="docs-image--no-shadow" caption="SigV4 configuration for AWS Elasticsearch Service" >}}
+![SigV4 configuration for AWS Elasticsearch Service](https://grafana.com/static/img/docs/v73/elasticsearch-sigv4-config-editor.png)
