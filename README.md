@@ -258,6 +258,6 @@ For more details on AWS SigV4, refer to the [AWS documentation](https://docs.aws
 
 In order to sign requests to your Amazon Elasticsearch Service domain, SigV4 can be enabled in the Grafana [configuration](https://grafana.com/docs/grafana/latest/administration/configuration#sigv4_auth_enabled).
 
-Once AWS SigV4 is enabled, it can be configured on the Elasticsearch data source configuration page. Refer to [Cloudwatch authentication](https://grafana.com/docs/grafana/latest/cloudwatch#authentication) for more information about authentication options.
+Once AWS SigV4 is enabled, it can be configured on the Elasticsearch data source configuration page. Refer to [Cloudwatch authentication](https://grafana.com/docs/grafana/latest/datasources/cloudwatch/#authentication) for more information about authentication options.
 
 ![SigV4 configuration for AWS Elasticsearch Service](https://grafana.com/static/img/docs/v73/elasticsearch-sigv4-config-editor.png)
