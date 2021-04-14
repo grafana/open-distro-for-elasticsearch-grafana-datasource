@@ -1,0 +1,52 @@
+{
+  "type": "datasource",
+  "name": "Open Distro for Elasticsearch",
+  "id": "grafana-es-open-distro-datasource",
+  "category": "logging",
+  "alerting": true,
+  "annotations": true,
+  "metrics": true,
+  "logs": true,
+  "backend": true,
+  "executable": "gpx_es-open-distro-datasource",
+  "info": {
+    "description": "",
+    "author": {
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
+    },
+    "keywords": [
+      "elasticsearch",
+      "opendistro"
+    ],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Learn more",
+        "url": "https://grafana.com/docs/features/datasources/elasticsearch/"
+      }
+    ],
+    "screenshots": [],
+    "version": "1.0.2",
+    "updated": "2021-04-14",
+    "build": {
+      "time": 1618418408965,
+      "repo": "git@github.com:grafana/open-distro-for-elasticsearch-grafana-datasource.git",
+      "branch": "v1.0.x",
+      "hash": "22b99c845eb5ad381b08fab2831d8d0f04ee2071",
+      "pr": 24,
+      "number": 188
+    }
+  },
+  "dependencies": {
+    "grafanaVersion": "7.5.2",
+    "grafanaDependency": ">=7.5.2",
+    "plugins": []
+  },
+  "queryOptions": {
+    "minInterval": true
+  }
+}
