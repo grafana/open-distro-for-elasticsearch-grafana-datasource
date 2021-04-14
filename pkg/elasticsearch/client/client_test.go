@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/bitly/go-simplejson"
-	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
-	"github.com/grafana/es-open-distro-datasource/pkg/utils"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/tsdb"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/utils"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/smartystreets/goconvey/convey"

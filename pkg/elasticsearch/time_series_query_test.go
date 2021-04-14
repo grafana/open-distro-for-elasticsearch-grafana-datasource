@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
-	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	es "github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/elasticsearch/client"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/tsdb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

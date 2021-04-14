@@ -10,12 +10,12 @@ import (
 	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
-	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
-	"github.com/grafana/es-open-distro-datasource/pkg/null"
-	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
-	"github.com/grafana/es-open-distro-datasource/pkg/utils"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	es "github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/elasticsearch/client"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/null"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/tsdb"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/utils"
 )
 
 const (

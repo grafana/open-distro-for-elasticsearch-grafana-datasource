@@ -1,4 +1,4 @@
-module github.com/grafana/es-open-distro-datasource
+module github.com/grafana/open-distro-for-elasticsearch-grafana-datasource
 
 go 1.14
 
