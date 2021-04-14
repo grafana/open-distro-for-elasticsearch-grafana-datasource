@@ -16,8 +16,8 @@
 package elasticsearch
 
 import (
-	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	es "github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/elasticsearch/client"
 )
 
 type pplHandler struct {

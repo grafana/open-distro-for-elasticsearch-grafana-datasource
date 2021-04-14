@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	es "github.com/grafana/es-open-distro-datasource/pkg/elasticsearch/client"
-	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	es "github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/elasticsearch/client"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/tsdb"
 )
 
 // ElasticsearchExecutor represents a handler for handling elasticsearch datasource request

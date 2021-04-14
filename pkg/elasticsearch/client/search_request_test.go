@@ -6,7 +6,7 @@ import (
 	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
-	"github.com/grafana/es-open-distro-datasource/pkg/tsdb"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/tsdb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/grafana/es-open-distro-datasource/pkg/elasticsearch"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/open-distro-for-elasticsearch-grafana-datasource/pkg/elasticsearch"
 )
 
 // newDatasource returns datasource.ServeOpts.
