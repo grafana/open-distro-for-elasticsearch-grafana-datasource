@@ -350,7 +350,7 @@ jobs:
               gsutil -m cp -r ci/packages/any/** gs://integration-artifacts/${PLUGIN_NAME}/release/${VERSION}/any
             fi
   publish_github_release:
-    working_directory: ~/es-open-distro-datasource
+    working_directory: ~/open-distro-for-elasticsearch-grafana-datasource
     docker:
       - image: cibuilds/github:0.13.0
     steps:
