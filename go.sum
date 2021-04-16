@@ -99,6 +99,8 @@ github.com/grafana/grafana-aws-sdk v0.3.0 h1:UT3rIXQFeAh0OaRJT7dUQojYaSjbI9RwOtM
 github.com/grafana/grafana-aws-sdk v0.3.0/go.mod h1:+pPo5U+pX0zWimR7YBc7ASeSQfbRkcTyQYqMiAj7G5U=
 github.com/grafana/grafana-aws-sdk v0.4.0 h1:JmTaXfOJ/ydHSWH9kEt8Yhfb9kAhIW4LUOO3SWCviYg=
 github.com/grafana/grafana-aws-sdk v0.4.0/go.mod h1:+pPo5U+pX0zWimR7YBc7ASeSQfbRkcTyQYqMiAj7G5U=
+github.com/grafana/grafana-aws-sdk v0.5.0 h1:fNhil3Qgz1Ak+8u5YfxDfJIx7gmmVv4xfn+3Xiwr3wg=
+github.com/grafana/grafana-aws-sdk v0.5.0/go.mod h1:+pPo5U+pX0zWimR7YBc7ASeSQfbRkcTyQYqMiAj7G5U=
 github.com/grafana/grafana-plugin-sdk-go v0.77.0 h1:iHvNGs6F+KHXozOiL6KBgwVfm7JKztoML1yV7Zy2sls=
 github.com/grafana/grafana-plugin-sdk-go v0.77.0/go.mod h1:NvxLzGkVhnoBKwzkst6CFfpMFKwAdIUZ1q8ssuLeF60=
 github.com/grafana/grafana-plugin-sdk-go v0.79.0 h1:7NVEIMlF8G9H7XUdLX9jH/g01FllE1GEBcFvzXZD+Kw=
