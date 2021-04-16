@@ -1,6 +1,6 @@
 {
   "name": "grafana-es-open-distro-datasource",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
@@ -25,7 +25,7 @@
     "@types/enzyme": "3.10.5",
     "@types/jest": "26.0.15",
     "@types/lodash": "latest",
-    "@types/prismjs": "1.16.0",
+    "@types/prismjs": "1.16.5",
     "@types/react": "16.9.9",
     "@types/react-test-renderer": "16.9.2",
     "@typescript-eslint/eslint-plugin": "4.0.1",
@@ -41,7 +41,7 @@
     "eslint-plugin-react-hooks": "4.1.2",
     "jest": "26.6.3",
     "prettier": "1.19.1",
-    "prismjs": "1.21.0",
+    "prismjs": "1.23.0",
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "react-use": "13.27.0",
