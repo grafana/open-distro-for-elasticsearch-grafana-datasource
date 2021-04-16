@@ -1,0 +1,38 @@
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+{
+  "manifestVersion": "2.0.0",
+  "signatureType": "grafana",
+  "signedByOrg": "grafana",
+  "signedByOrgName": "Grafana Labs",
+  "plugin": "grafana-es-open-distro-datasource",
+  "version": "1.0.4",
+  "time": 1618576126400,
+  "keyId": "7e4d0c6a708866e7",
+  "files": {
+    "gpx_es-open-distro-datasource_linux_arm": "56c49b3a2651fbd1696e239f6448068c994cdf9fc5ae9ce9c806c95c37911a5f",
+    "gpx_es-open-distro-datasource_darwin_amd64": "250197ded094889aeb84284af6e20acd087cae1c6c20307a227d784ab640096e",
+    "gpx_es-open-distro-datasource_linux_arm64": "4c2af527747d0f0e2bf321801305025364c7d8de9650e2c75a17a96f84e2ba7b",
+    "img/logo.svg": "00f2d5508d37e01a8a38b60dc5cacd10465c44f28ec3fc8c372068dcc7099417",
+    "partials/annotations.editor.html": "29d09f8186c5620d166f2b9c4c593cffcbc257dfd47191b2e90e6c7acc696a9f",
+    "module.js": "3bf33ce6f5e7feb2ffec0ec93020806ee75c56b492c7f623a5e53f0f0591cb0a",
+    "module.js.LICENSE.txt": "0d8f66cd4afb566cb5b7e1540c68f43b939d3eba12ace290f18abc4f4cb53ed0",
+    "module.js.map": "67dc41717f229e346c38ee31444b189fe7e4585d732ab3b1428263fc32aa1170",
+    "README.md": "bf4d793d63179c7b59b2360ce796b9604ad458a0300ea84bd54e4981e5592c1a",
+    "plugin.json": "a7c45919fdbe787b5bc1e7de84b4e0f41a47e972e850379de41359039e19fa50",
+    "LICENSE": "7339fa418c9ad3e8e12e74ad0fd26a9cc4be8703f9c110728a992b193be85cb2",
+    "CHANGELOG.md": "c6b2f986a047ca4c303da414e79fcb5f89daca9994139f21b57def388acf5f8c"
+  }
+}
+-----BEGIN PGP SIGNATURE-----
+Version: OpenPGP.js v4.10.1
+Comment: https://openpgpjs.org
+
+wqEEARMKAAYFAmB5gv4ACgkQfk0ManCIZuf/mwIHfn1tKocWICcZRB3aHoog
+GD3ToFJhkFxebLzRcpIaac4QUSBRvwi0LNpzhXQSp5bNUNHf69HZDWYqu6Rq
+9kCD5RcCCQEcHNN04J/I2o8wNIqodJBFFRBYqFOtzWzeCLgHmSqSsdXEZxN3
+A3n7OXotI4BVvolK3z+sl0TMHPGHSQgXLFvO3w==
+=6/8d
+-----END PGP SIGNATURE-----
