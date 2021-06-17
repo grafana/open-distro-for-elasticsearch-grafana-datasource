@@ -214,7 +214,7 @@ apiVersion: 1
 
 datasources:
   - name: Elastic
-    type: elasticsearch
+    type: grafana-es-open-distro-datasource
     access: proxy
     database: '[metrics-]YYYY.MM.DD'
     url: http://localhost:9200
@@ -230,7 +230,7 @@ apiVersion: 1
 
 datasources:
   - name: elasticsearch-v7-filebeat
-    type: elasticsearch
+    type: grafana-es-open-distro-datasource
     access: proxy
     database: '[filebeat-]YYYY.MM.DD'
     url: http://localhost:9200
@@ -240,6 +240,12 @@ datasources:
       esVersion: 70
       logMessageField: message
       logLevelField: fields.level
+```
+
+PPL support can be disabled using:
+```yaml
+    jsonData:
+      pplEnabled: false
 ```
 
 ## Amazon Elasticsearch Service
