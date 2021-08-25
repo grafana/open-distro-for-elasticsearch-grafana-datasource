@@ -1,4 +1,6 @@
-# Open Distro for Elasticsearch Grafana Data Source
+> **NOTE:** This plugin is deprecated, since the **Open Distro for Elasticsearch** project has been renamed to **OpenSearch**. New versions of this plugin will not be released. The [OpenSearch plugin](https://grafana.com/grafana/plugins/grafana-opensearch-datasource/) is identical to this one, except that it has a different name and it will be maintained in the future. To migrate, [install the OpenSearch plugin](https://grafana.com/grafana/plugins/grafana-opensearch-datasource/?tab=installation), create new data sources for it within Grafana using the same credentials and settings, and point your existing Open Distro for Elasticsearch queries to the new OpenSearch data source.
+
+# Open Distro for Elasticsearch Grafana Data Source (deprecated)
 
 With the Open Distro for Elasticsearch plugin, you can run many types of simple or complex Elasticsearch queries to
 visualize logs or metrics stored in Elasticsearch. You can also annotate your graphs with log events stored in Elasticsearch. The Open Distro for Elasticsearch plugin is similar to the built-in Elasticsearch plugin, but with added support for AWS Sigv4 authentication and [Piped Processing Language (PPL)](https://opendistro.github.io/for-elasticsearch-docs/docs/ppl/).
