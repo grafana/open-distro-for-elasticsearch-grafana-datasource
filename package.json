@@ -1,6 +1,6 @@
 {
   "name": "grafana-es-open-distro-datasource",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
